@@ -1,0 +1,11 @@
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.csproj.AssemblyReference.cache
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.AssemblyInfoInputs.cache
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.AssemblyInfo.cs
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.csproj.CoreCompileInputs.cache
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\bin\Debug\netstandard2.1\WaylandProtocol\wayland.xml
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\bin\Debug\netstandard2.1\WaylandProtocal.deps.json
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\bin\Debug\netstandard2.1\WaylandProtocal.dll
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\bin\Debug\netstandard2.1\WaylandProtocal.pdb
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.dll
+D:\Projects\vsProjects\LinuxWindows\WaylandProtocal\obj\Debug\netstandard2.1\WaylandProtocal.pdb
