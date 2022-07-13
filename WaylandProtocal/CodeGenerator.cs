@@ -222,7 +222,6 @@ namespace WaylandProtocal
                 extraArgs:
                     if (arg.Type == "new_id" && string.IsNullOrEmpty(arg.Interface))
                     {
-                        //Debug();
                         methodArgs.Add("string @interface");
                         methodArgs.Add("uint version");
 
@@ -235,12 +234,12 @@ namespace WaylandProtocal
                     methodArgsUsage[0] = ", " + methodArgsUsage[0];
                 }
 
-                string comment = string.Format(commentBase, message.Description.Summary, message.Description.Content);
+                string comment = string.Format(commentBase, message.Description.Summary,  message.Description.Content);
 
                 string methodName = ToTitleCase(message.Name);
 
                 string requestBase = string.Empty;
-                //requestBase +=  string.Format("{0}" + Environment.NewLine, comment);
+                requestBase +=  string.Format("{0}" + Environment.NewLine, comment);
                 if (returnType == "T")
                     requestBase += string.Format("public {0} {1}<T>({2}) where T : WaylandObject" + Environment.NewLine, returnType, methodName, string.Join(",", methodArgs));
                 else
@@ -328,7 +327,7 @@ namespace WaylandProtocal
                                 /// <summary>
                                 /// {0}
                                 /// <para>
-                                /// {1}
+                                {1}
                                 /// </para>
                                 /// </summary>
                                     ";
@@ -340,18 +339,6 @@ namespace WaylandProtocal
                                 }
                                  ";
 
-
-        [DebuggerHidden]
-        public void Debug() 
-        {
-#if DEBUG
-            if (!Debugger.IsAttached)
-            {
-                Debugger.Launch();
-            }
-#endif
-
-        }
 
     }
 }
