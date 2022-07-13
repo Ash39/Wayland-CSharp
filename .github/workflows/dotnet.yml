@@ -1,0 +1,27 @@
+name: .NET
+
+on:
+  push:
+    branches: [ release ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+           submodules: recursive 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.x.x
+    - name: Restore dependencies
+      run: dotnet restore "Wayland C#.sln"
+    - name: Build
+      run: dotnet build "Wayland C#.sln" -c Release --no-restore /p:DOTNET_RUNNING_IN_CONTAINER=true
+    - name: Upload Nuget Package
+      env:
+        NUGET: ${{ secrets.Nuget }}
+      run: dotnet nuget push "*/bin/Release/*.nupkg" --api-key "$NUGET" --source https://nuget-server.herokuapp.com/v3/index.json
