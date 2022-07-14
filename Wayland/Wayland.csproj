@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RestoreAdditionalProjectSources>
+      https://nuget-server.herokuapp.com/v3/index.json
+    </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <ItemGroup>
