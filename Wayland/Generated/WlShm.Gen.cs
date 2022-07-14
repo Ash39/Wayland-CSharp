@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// shared memory support
+    /// </summary>
     public partial class WlShm : WaylandObject
     {
         public const string INTERFACE = "wl_shm";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// create a shm pool
+        /// </summary>
         public WlShmPool CreatePool(IntPtr fd, int size)
         {
             uint id = connection.Create();

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// data transfer interface
+    /// </summary>
     public partial class WlDataDeviceManager : WaylandObject
     {
         public const string INTERFACE = "wl_data_device_manager";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// create a new data source
+        /// </summary>
         public WlDataSource CreateDataSource()
         {
             uint id = connection.Create();
@@ -19,6 +25,9 @@ namespace Wayland
             return (WlDataSource)connection[id];
         }
 
+        /// <summary>
+        /// create a new data device
+        /// </summary>
         public WlDataDevice GetDataDevice(WlSeat seat)
         {
             uint id = connection.Create();

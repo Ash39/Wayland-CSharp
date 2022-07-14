@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// region interface
+    /// </summary>
     public partial class WlRegion : WaylandObject
     {
         public const string INTERFACE = "wl_region";
@@ -10,18 +13,27 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// destroy region
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// add rectangle to region
+        /// </summary>
         public void Add(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Add, x, y, width, height);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Add}({x},{y},{width},{height})");
         }
 
+        /// <summary>
+        /// subtract rectangle from region
+        /// </summary>
         public void Subtract(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Subtract, x, y, width, height);

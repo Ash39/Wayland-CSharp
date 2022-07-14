@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// pointer input device
+    /// </summary>
     public partial class WlPointer : WaylandObject
     {
         public const string INTERFACE = "wl_pointer";
@@ -10,12 +13,18 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// set the pointer surface
+        /// </summary>
         public void SetCursor(uint serial, WlSurface surface, int hotspot_x, int hotspot_y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetCursor, serial, surface.id, hotspot_x, hotspot_y);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetCursor}({serial},{surface.id},{hotspot_x},{hotspot_y})");
         }
 
+        /// <summary>
+        /// release the pointer object
+        /// </summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// the compositor singleton
+    /// </summary>
     public partial class WlCompositor : WaylandObject
     {
         public const string INTERFACE = "wl_compositor";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// create new surface
+        /// </summary>
         public WlSurface CreateSurface()
         {
             uint id = connection.Create();
@@ -19,6 +25,9 @@ namespace Wayland
             return (WlSurface)connection[id];
         }
 
+        /// <summary>
+        /// create new region
+        /// </summary>
         public WlRegion CreateRegion()
         {
             uint id = connection.Create();

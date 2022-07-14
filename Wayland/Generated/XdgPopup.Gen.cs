@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// short-lived, popup surfaces for menus
+    /// </summary>
     public partial class XdgPopup : WaylandObject
     {
         public const string INTERFACE = "xdg_popup";
@@ -10,18 +13,27 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// remove xdg_popup interface
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// make the popup take an explicit grab
+        /// </summary>
         public void Grab(WlSeat seat, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Grab, seat.id, serial);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Grab}({seat.id},{serial})");
         }
 
+        /// <summary>
+        /// recalculate the popup's location
+        /// </summary>
         public void Reposition(XdgPositioner positioner, uint token)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Reposition, positioner.id, token);

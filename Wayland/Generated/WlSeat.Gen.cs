@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// group of input devices
+    /// </summary>
     public partial class WlSeat : WaylandObject
     {
         public const string INTERFACE = "wl_seat";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// return pointer object
+        /// </summary>
         public WlPointer GetPointer()
         {
             uint id = connection.Create();
@@ -19,6 +25,9 @@ namespace Wayland
             return (WlPointer)connection[id];
         }
 
+        /// <summary>
+        /// return keyboard object
+        /// </summary>
         public WlKeyboard GetKeyboard()
         {
             uint id = connection.Create();
@@ -28,6 +37,9 @@ namespace Wayland
             return (WlKeyboard)connection[id];
         }
 
+        /// <summary>
+        /// return touch object
+        /// </summary>
         public WlTouch GetTouch()
         {
             uint id = connection.Create();
@@ -37,6 +49,9 @@ namespace Wayland
             return (WlTouch)connection[id];
         }
 
+        /// <summary>
+        /// release the seat object
+        /// </summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);

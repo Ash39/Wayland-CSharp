@@ -42,13 +42,13 @@ namespace WaylandProtocal
                     using (StreamWriter streamWriter = File.CreateText(Path.Combine(directory, "Generated", ToTitleCase(@interface.Name) + ".Gen.cs")))
                     {
 
-                        string classComment = string.Format(commentBase, @interface.Description.Summary, @interface.Description.Content);
+                        string classComment = string.Format(commentBase, @interface.Description.Summary);
 
                         string classCode = "using System;" + Environment.NewLine;
                         classCode += "using System.Collections.Generic;" + Environment.NewLine;
                         classCode += "namespace Wayland" + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
-                        //classCode += string.Format("{0}", classComment) + Environment.NewLine;
+                        classCode += string.Format("{0}", classComment) + Environment.NewLine;
                         classCode += string.Format("public partial class {0} : WaylandObject", ToTitleCase(@interface.Name)) + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
                         classCode += string.Format(@"public const string INTERFACE = ""{0}"";", @interface.Name) + Environment.NewLine;
@@ -234,8 +234,7 @@ namespace WaylandProtocal
                     methodArgsUsage[0] = ", " + methodArgsUsage[0];
                 }
 
-                string comment = string.Format(commentBase, message.Description.Summary,  message.Description.Content);
-
+                string comment = string.Format(commentBase, message.Description.Summary);
                 string methodName = ToTitleCase(message.Name);
 
                 string requestBase = string.Empty;
@@ -243,7 +242,7 @@ namespace WaylandProtocal
                 if (returnType == "T")
                     requestBase += string.Format("public {0} {1}<T>({2}) where T : WaylandObject" + Environment.NewLine, returnType, methodName, string.Join(",", methodArgs));
                 else
-                    requestBase += string.Format("public {0} {1}({2})" + Environment.NewLine, returnType, methodName, string.Join(",", methodArgs));
+                    requestBase += string.Format("public {0} {1}({2})" + Environment.NewLine, returnType, methodName, string.Join(",",methodArgs));
 
                 requestBase += "{" + Environment.NewLine;
                 requestBase += string.Format("{0}" + Environment.NewLine, generateId);
@@ -326,9 +325,6 @@ namespace WaylandProtocal
         private static string commentBase = @"
                                 /// <summary>
                                 /// {0}
-                                /// <para>
-                                {1}
-                                /// </para>
                                 /// </summary>
                                     ";
 

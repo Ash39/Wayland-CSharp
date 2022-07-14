@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// compositor output region
+    /// </summary>
     public partial class WlOutput : WaylandObject
     {
         public const string INTERFACE = "wl_output";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// release the output object
+        /// </summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);

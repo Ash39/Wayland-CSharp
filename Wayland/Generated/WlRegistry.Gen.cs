@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// global registry object
+    /// </summary>
     public partial class WlRegistry : WaylandObject
     {
         public const string INTERFACE = "wl_registry";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// bind an object to the display
+        /// </summary>
         public T Bind<T>(uint name, string @interface, uint version)
             where T : WaylandObject
         {

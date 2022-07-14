@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// core global object
+    /// </summary>
     public partial class WlDisplay : WaylandObject
     {
         public const string INTERFACE = "wl_display";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// asynchronous roundtrip
+        /// </summary>
         public WlCallback Sync()
         {
             uint callback = connection.Create();
@@ -19,6 +25,9 @@ namespace Wayland
             return (WlCallback)connection[callback];
         }
 
+        /// <summary>
+        /// get global registry object
+        /// </summary>
         public WlRegistry GetRegistry()
         {
             uint registry = connection.Create();

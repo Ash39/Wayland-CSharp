@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// create desktop-style surfaces
+    /// </summary>
     public partial class XdgWmBase : WaylandObject
     {
         public const string INTERFACE = "xdg_wm_base";
@@ -10,12 +13,18 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// destroy xdg_wm_base
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// create a positioner object
+        /// </summary>
         public XdgPositioner CreatePositioner()
         {
             uint id = connection.Create();
@@ -25,6 +34,9 @@ namespace Wayland
             return (XdgPositioner)connection[id];
         }
 
+        /// <summary>
+        /// create a shell surface from a surface
+        /// </summary>
         public XdgSurface GetXdgSurface(WlSurface surface)
         {
             uint id = connection.Create();
@@ -34,6 +46,9 @@ namespace Wayland
             return (XdgSurface)connection[id];
         }
 
+        /// <summary>
+        /// respond to a ping event
+        /// </summary>
         public void Pong(uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Pong, serial);

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// content for a wl_surface
+    /// </summary>
     public partial class WlBuffer : WaylandObject
     {
         public const string INTERFACE = "wl_buffer";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// destroy a buffer
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);

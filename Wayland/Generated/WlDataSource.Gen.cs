@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// offer to transfer data
+    /// </summary>
     public partial class WlDataSource : WaylandObject
     {
         public const string INTERFACE = "wl_data_source";
@@ -10,18 +13,27 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// add an offered mime type
+        /// </summary>
         public void Offer(string mime_type)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Offer, mime_type);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Offer}({mime_type})");
         }
 
+        /// <summary>
+        /// destroy the data source
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// set the available drag-and-drop actions
+        /// </summary>
         public void SetActions(uint dnd_actions)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetActions, dnd_actions);

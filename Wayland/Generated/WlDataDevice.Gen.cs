@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// data transfer device
+    /// </summary>
     public partial class WlDataDevice : WaylandObject
     {
         public const string INTERFACE = "wl_data_device";
@@ -10,18 +13,27 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// start drag-and-drop operation
+        /// </summary>
         public void StartDrag(WlDataSource source, WlSurface origin, WlSurface icon, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.StartDrag, source.id, origin.id, icon.id, serial);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.StartDrag}({source.id},{origin.id},{icon.id},{serial})");
         }
 
+        /// <summary>
+        /// copy data to the selection
+        /// </summary>
         public void SetSelection(WlDataSource source, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetSelection, source.id, serial);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetSelection}({source.id},{serial})");
         }
 
+        /// <summary>
+        /// destroy data device
+        /// </summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);

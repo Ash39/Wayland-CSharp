@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// create desktop-style surfaces
+    /// </summary>
     public partial class WlShell : WaylandObject
     {
         public const string INTERFACE = "wl_shell";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// create a shell surface from a surface
+        /// </summary>
         public WlShellSurface GetShellSurface(WlSurface surface)
         {
             uint id = connection.Create();

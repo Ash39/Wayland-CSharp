@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// sub-surface compositing
+    /// </summary>
     public partial class WlSubcompositor : WaylandObject
     {
         public const string INTERFACE = "wl_subcompositor";
@@ -10,12 +13,18 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// unbind from the subcompositor interface
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// give a surface the role sub-surface
+        /// </summary>
         public WlSubsurface GetSubsurface(WlSurface surface, WlSurface parent)
         {
             uint id = connection.Create();

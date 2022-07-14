@@ -11,7 +11,6 @@ namespace Wayland
 {
     public partial class WlDisplay
     {
-        
         public static WlDisplay Connect(string displayPath = null)
         {
             displayPath ??= Environment.GetEnvironmentVariable("WAYLAND_DISPLAY");

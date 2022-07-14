@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// callback object
+    /// </summary>
     public partial class WlCallback : WaylandObject
     {
         public const string INTERFACE = "wl_callback";

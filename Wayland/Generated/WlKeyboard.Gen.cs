@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// keyboard input device
+    /// </summary>
     public partial class WlKeyboard : WaylandObject
     {
         public const string INTERFACE = "wl_keyboard";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// release the keyboard object
+        /// </summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);

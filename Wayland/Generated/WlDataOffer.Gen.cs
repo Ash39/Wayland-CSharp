@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// offer to transfer data
+    /// </summary>
     public partial class WlDataOffer : WaylandObject
     {
         public const string INTERFACE = "wl_data_offer";
@@ -10,30 +13,45 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// accept one of the offered mime types
+        /// </summary>
         public void Accept(uint serial, string mime_type)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Accept, serial, mime_type);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Accept}({serial},{mime_type})");
         }
 
+        /// <summary>
+        /// request that the data is transferred
+        /// </summary>
         public void Receive(string mime_type, IntPtr fd)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Receive, mime_type, fd);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Receive}({mime_type},{fd})");
         }
 
+        /// <summary>
+        /// destroy data offer
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// the offer will no longer be used
+        /// </summary>
         public void Finish()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Finish);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Finish}()");
         }
 
+        /// <summary>
+        /// set the available/preferred drag-and-drop actions
+        /// </summary>
         public void SetActions(uint dnd_actions, uint preferred_action)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetActions, dnd_actions, preferred_action);

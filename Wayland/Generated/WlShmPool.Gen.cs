@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
+    /// <summary>
+    /// a shared memory pool
+    /// </summary>
     public partial class WlShmPool : WaylandObject
     {
         public const string INTERFACE = "wl_shm_pool";
@@ -10,6 +13,9 @@ namespace Wayland
         {
         }
 
+        /// <summary>
+        /// create a buffer from the pool
+        /// </summary>
         public WlBuffer CreateBuffer(int offset, int width, int height, int stride, uint format)
         {
             uint id = connection.Create();
@@ -19,12 +25,18 @@ namespace Wayland
             return (WlBuffer)connection[id];
         }
 
+        /// <summary>
+        /// destroy the pool
+        /// </summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
+        /// <summary>
+        /// change the size of the pool mapping
+        /// </summary>
         public void Resize(int size)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Resize, size);
