@@ -170,31 +170,35 @@ namespace Wayland
 
         public void Write(int value)
         {
-            writeBuffer.Add((byte)value);
-            writeBuffer.Add((byte)(value >> 8));
-            writeBuffer.Add((byte)(value >> 16));
-            writeBuffer.Add((byte)(value >> 24));
+            Span<byte> bytes = new byte[4];
+            if(BitConverter.IsLittleEndian)
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, value);
+            else
+                BinaryPrimitives.WriteInt32BigEndian(bytes, value);
+
+            writeBuffer.AddRange(bytes.ToArray());
         }
 
         public void Write(uint value)
         {
-            writeBuffer.Add((byte)value);
-            writeBuffer.Add((byte)(value >> 8));
-            writeBuffer.Add((byte)(value >> 16));
-            writeBuffer.Add((byte)(value >> 24));
+            Span<byte> bytes = new byte[4];
+            if(BitConverter.IsLittleEndian)
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
+            else
+                BinaryPrimitives.WriteUInt32BigEndian(bytes, value);
+
+            writeBuffer.AddRange(bytes.ToArray());
         }
 
         public unsafe void Write(double value)
         {
-            ulong TmpValue = *(ulong*)&value;
-            writeBuffer.Add((byte)TmpValue);
-            writeBuffer.Add((byte)(TmpValue >> 8));
-            writeBuffer.Add((byte)(TmpValue >> 16));
-            writeBuffer.Add((byte)(TmpValue >> 24));
-            writeBuffer.Add((byte)(TmpValue >> 32));
-            writeBuffer.Add((byte)(TmpValue >> 40));
-            writeBuffer.Add((byte)(TmpValue >> 48));
-            writeBuffer.Add((byte)(TmpValue >> 56));
+            Span<byte> bytes = new byte[8];
+            if(BitConverter.IsLittleEndian)
+                BinaryPrimitives.WriteUInt64LittleEndian(bytes, BitConverter.DoubleToUInt64Bits(value));
+            else
+                BinaryPrimitives.WriteUInt64BigEndian(bytes, BitConverter.DoubleToUInt64Bits(value));
+
+            writeBuffer.AddRange(bytes.ToArray());
         }
 
         public void Write(string s)
@@ -236,7 +240,7 @@ namespace Wayland
 
         public void Write(IntPtr h)
         {
-            int dupFd = h.ToInt32();
+            int dupFd = Syscall.dup(h.ToInt32());
 
             if (dupFd < 0)
                 throw new Exception(string.Format("dup failed: {0}", h.ToInt32()));
@@ -268,17 +272,26 @@ namespace Wayland
 
         public int ReadInt()
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(InternalRead(4));
+            if(BitConverter.IsLittleEndian)
+                return BinaryPrimitives.ReadInt32LittleEndian(InternalRead(4));
+            else
+                return BinaryPrimitives.ReadInt32BigEndian(InternalRead(4));
         }
 
         public uint ReadUInt()
         {
-            return BinaryPrimitives.ReadUInt32LittleEndian(InternalRead(4));
+            if(BitConverter.IsLittleEndian)
+                return BinaryPrimitives.ReadUInt32LittleEndian(InternalRead(4));
+            else
+                return BinaryPrimitives.ReadUInt32BigEndian(InternalRead(4));
         }
 
         public double ReadDouble()
         {
-            return BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(InternalRead(8)));
+            if(BitConverter.IsLittleEndian)
+                return BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(InternalRead(8)));
+            else
+                return BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64BigEndian(InternalRead(8)));
         }
 
         public string ReadString()

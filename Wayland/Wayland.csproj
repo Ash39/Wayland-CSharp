@@ -14,18 +14,7 @@
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="WaylandProtocol\wayland.xml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Generated\" />
-  </ItemGroup>
-
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="dotnet build ../WaylandProtocal" />
     <Exec Command="dotnet ../WaylandProtocal/bin/Debug/net6.0/WaylandProtocal.dll Generated" />
   </Target>
 

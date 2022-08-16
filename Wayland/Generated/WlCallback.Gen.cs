@@ -3,13 +3,17 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
-    /// <summary>
-    /// callback object
-    /// </summary>
+    ///<Summary>
+    ///callback object
+    ///<para>
+    ///Clients can handle the 'done' event to get notified when
+    ///the related request is done.
+    ///</para>
+    ///</Summary>
     public partial class WlCallback : WaylandObject
     {
         public const string INTERFACE = "wl_callback";
-        public WlCallback(uint id, uint version, WaylandConnection connection) : base(id, version, connection)
+        public WlCallback(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
         {
         }
 
@@ -17,6 +21,12 @@ namespace Wayland
         {
         }
 
+        ///<Summary>
+        ///done event
+        ///<para>
+        ///Notify the client when the related request is done.
+        ///</para>
+        ///</Summary>
         public Action<WlCallback, uint> done;
         public enum EventOpcode : ushort
         {

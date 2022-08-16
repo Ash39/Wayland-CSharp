@@ -3,37 +3,61 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
-    /// <summary>
-    /// region interface
-    /// </summary>
+    ///<Summary>
+    ///region interface
+    ///<para>
+    ///A region object describes an area.
+    ///</para>
+    ///<para>
+    ///Region objects are used to describe the opaque and input
+    ///regions of a surface.
+    ///</para>
+    ///</Summary>
     public partial class WlRegion : WaylandObject
     {
         public const string INTERFACE = "wl_region";
-        public WlRegion(uint id, uint version, WaylandConnection connection) : base(id, version, connection)
+        public WlRegion(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
         {
         }
 
-        /// <summary>
-        /// destroy region
-        /// </summary>
+        ///<Summary>
+        ///destroy region
+        ///<para>
+        ///Destroy the region.  This will invalidate the object ID.
+        ///</para>
+        ///</Summary>
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
         }
 
-        /// <summary>
-        /// add rectangle to region
-        /// </summary>
+        ///<Summary>
+        ///add rectangle to region
+        ///<para>
+        ///Add the specified rectangle to the region.
+        ///</para>
+        ///</Summary>
+        ///<param name = "x"> region-local x coordinate </param>
+        ///<param name = "y"> region-local y coordinate </param>
+        ///<param name = "width"> rectangle width </param>
+        ///<param name = "height"> rectangle height </param>
         public void Add(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Add, x, y, width, height);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Add}({x},{y},{width},{height})");
         }
 
-        /// <summary>
-        /// subtract rectangle from region
-        /// </summary>
+        ///<Summary>
+        ///subtract rectangle from region
+        ///<para>
+        ///Subtract the specified rectangle from the region.
+        ///</para>
+        ///</Summary>
+        ///<param name = "x"> region-local x coordinate </param>
+        ///<param name = "y"> region-local y coordinate </param>
+        ///<param name = "width"> rectangle width </param>
+        ///<param name = "height"> rectangle height </param>
         public void Subtract(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Subtract, x, y, width, height);

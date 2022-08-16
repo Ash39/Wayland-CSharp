@@ -3,37 +3,52 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
-    /// <summary>
-    /// the compositor singleton
-    /// </summary>
+    ///<Summary>
+    ///the compositor singleton
+    ///<para>
+    ///A compositor.  This object is a singleton global.  The
+    ///compositor is in charge of combining the contents of multiple
+    ///surfaces into one displayable output.
+    ///</para>
+    ///</Summary>
     public partial class WlCompositor : WaylandObject
     {
         public const string INTERFACE = "wl_compositor";
-        public WlCompositor(uint id, uint version, WaylandConnection connection) : base(id, version, connection)
+        public WlCompositor(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 5, connection)
         {
         }
 
-        /// <summary>
-        /// create new surface
-        /// </summary>
+        ///<Summary>
+        ///create new surface
+        ///<para>
+        ///Ask the compositor to create a new surface.
+        ///</para>
+        ///</Summary>
+        ///<returns> the new surface </returns>
         public WlSurface CreateSurface()
         {
             uint id = connection.Create();
+            WlSurface wObject = new WlSurface(this.id, ref id, connection);
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateSurface, id);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateSurface}({id})");
-            connection[id] = new WlSurface(id, version, connection);
+            connection[id] = wObject;
             return (WlSurface)connection[id];
         }
 
-        /// <summary>
-        /// create new region
-        /// </summary>
+        ///<Summary>
+        ///create new region
+        ///<para>
+        ///Ask the compositor to create a new region.
+        ///</para>
+        ///</Summary>
+        ///<returns> the new region </returns>
         public WlRegion CreateRegion()
         {
             uint id = connection.Create();
+            WlRegion wObject = new WlRegion(this.id, ref id, connection);
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateRegion, id);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateRegion}({id})");
-            connection[id] = new WlRegion(id, version, connection);
+            connection[id] = wObject;
             return (WlRegion)connection[id];
         }
 

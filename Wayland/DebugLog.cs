@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Wayland
 {
-    internal class DebugLog
+    public class DebugLog
     {
         public static void WriteLine(string @string) 
         {

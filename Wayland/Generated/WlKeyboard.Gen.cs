@@ -3,19 +3,23 @@ using System.Collections.Generic;
 
 namespace Wayland
 {
-    /// <summary>
-    /// keyboard input device
-    /// </summary>
+    ///<Summary>
+    ///keyboard input device
+    ///<para>
+    ///The wl_keyboard interface represents one or more keyboards
+    ///associated with a seat.
+    ///</para>
+    ///</Summary>
     public partial class WlKeyboard : WaylandObject
     {
         public const string INTERFACE = "wl_keyboard";
-        public WlKeyboard(uint id, uint version, WaylandConnection connection) : base(id, version, connection)
+        public WlKeyboard(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 8, connection)
         {
         }
 
-        /// <summary>
-        /// release the keyboard object
-        /// </summary>
+        ///<Summary>
+        ///release the keyboard object
+        ///</Summary>
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
@@ -27,11 +31,92 @@ namespace Wayland
             Release
         }
 
-        public Action<WlKeyboard, uint, IntPtr, uint> keymap;
+        ///<Summary>
+        ///keyboard mapping
+        ///<para>
+        ///This event provides a file descriptor to the client which can be
+        ///memory-mapped in read-only mode to provide a keyboard mapping
+        ///description.
+        ///</para>
+        ///<para>
+        ///From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
+        ///the recipient, as MAP_SHARED may fail.
+        ///</para>
+        ///</Summary>
+        public Action<WlKeyboard, KeymapFormatFlag, IntPtr, uint> keymap;
+        ///<Summary>
+        ///enter event
+        ///<para>
+        ///Notification that this seat's keyboard focus is on a certain
+        ///surface.
+        ///</para>
+        ///<para>
+        ///The compositor must send the wl_keyboard.modifiers event after this
+        ///event.
+        ///</para>
+        ///</Summary>
         public Action<WlKeyboard, uint, WaylandObject, byte[]> enter;
+        ///<Summary>
+        ///leave event
+        ///<para>
+        ///Notification that this seat's keyboard focus is no longer on
+        ///a certain surface.
+        ///</para>
+        ///<para>
+        ///The leave notification is sent before the enter notification
+        ///for the new focus.
+        ///</para>
+        ///<para>
+        ///After this event client must assume that all keys, including modifiers,
+        ///are lifted and also it must stop key repeating if there's some going on.
+        ///</para>
+        ///</Summary>
         public Action<WlKeyboard, uint, WaylandObject> leave;
-        public Action<WlKeyboard, uint, uint, uint, uint> key;
+        ///<Summary>
+        ///key event
+        ///<para>
+        ///A key was pressed or released.
+        ///The time argument is a timestamp with millisecond
+        ///granularity, with an undefined base.
+        ///</para>
+        ///<para>
+        ///The key is a platform-specific key code that can be interpreted
+        ///by feeding it to the keyboard mapping (see the keymap event).
+        ///</para>
+        ///<para>
+        ///If this event produces a change in modifiers, then the resulting
+        ///wl_keyboard.modifiers event must be sent after this event.
+        ///</para>
+        ///</Summary>
+        public Action<WlKeyboard, uint, uint, uint, KeyStateFlag> key;
+        ///<Summary>
+        ///modifier and group state
+        ///<para>
+        ///Notifies clients that the modifier and/or group state has
+        ///changed, and it should update its local state.
+        ///</para>
+        ///</Summary>
         public Action<WlKeyboard, uint, uint, uint, uint, uint> modifiers;
+        ///<Summary>
+        ///repeat rate and delay
+        ///<para>
+        ///Informs the client about the keyboard's repeat rate and delay.
+        ///</para>
+        ///<para>
+        ///This event is sent as soon as the wl_keyboard object has been created,
+        ///and is guaranteed to be received by the client before any key press
+        ///event.
+        ///</para>
+        ///<para>
+        ///Negative values for either rate or delay are illegal. A rate of zero
+        ///will disable any repeating (regardless of the value of delay).
+        ///</para>
+        ///<para>
+        ///This event can be sent later on as well with a new value if necessary,
+        ///so clients should continue listening for the event past the creation
+        ///of wl_keyboard.
+        ///</para>
+        ///</Summary>
         public Action<WlKeyboard, int, int> repeatInfo;
         public enum EventOpcode : ushort
         {
@@ -49,7 +134,7 @@ namespace Wayland
             {
                 case EventOpcode.Keymap:
                 {
-                    var format = (uint)arguments[0];
+                    var format = (KeymapFormatFlag)arguments[0];
                     var fd = (IntPtr)arguments[1];
                     var size = (uint)arguments[2];
                     if (this.keymap != null)
@@ -93,7 +178,7 @@ namespace Wayland
                     var serial = (uint)arguments[0];
                     var time = (uint)arguments[1];
                     var key = (uint)arguments[2];
-                    var state = (uint)arguments[3];
+                    var state = (KeyStateFlag)arguments[3];
                     if (this.key != null)
                     {
                         this.key.Invoke(this, serial, time, key, state);
@@ -156,6 +241,43 @@ namespace Wayland
                 default:
                     throw new ArgumentOutOfRangeException("unknown event");
             }
+        }
+
+        ///<Summary>
+        ///keyboard mapping format
+        ///<para>
+        ///This specifies the format of the keymap provided to the
+        ///client with the wl_keyboard.keymap event.
+        ///</para>
+        ///</Summary>
+        public enum KeymapFormatFlag : uint
+        {
+            ///<Summary>
+            ///no keymap; client must understand how to interpret the raw keycode
+            ///</Summary>
+            NoKeymap = 0,
+            ///<Summary>
+            ///libxkbcommon compatible, null-terminated string; to determine the xkb keycode, clients must add 8 to the key event keycode
+            ///</Summary>
+            XkbV1 = 1,
+        }
+
+        ///<Summary>
+        ///physical key state
+        ///<para>
+        ///Describes the physical state of a key that produced the key event.
+        ///</para>
+        ///</Summary>
+        public enum KeyStateFlag : uint
+        {
+            ///<Summary>
+            ///key is not pressed
+            ///</Summary>
+            Released = 0,
+            ///<Summary>
+            ///key is pressed
+            ///</Summary>
+            Pressed = 1,
         }
     }
 }

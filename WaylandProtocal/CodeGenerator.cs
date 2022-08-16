@@ -19,7 +19,7 @@ namespace WaylandProtocal
     {
         private static readonly List<Protocol> protocols = new List<Protocol>();
 
-        static void Main(string[] args) 
+        public static void Main(string[] args) 
         {
             string directory = Path.GetDirectoryName(args[0]);
 
@@ -41,22 +41,20 @@ namespace WaylandProtocal
                 {
                     using (StreamWriter streamWriter = File.CreateText(Path.Combine(directory, "Generated", ToTitleCase(@interface.Name) + ".Gen.cs")))
                     {
-
-                        string classComment = string.Format(commentBase, @interface.Description.Summary);
-
                         string classCode = "using System;" + Environment.NewLine;
                         classCode += "using System.Collections.Generic;" + Environment.NewLine;
                         classCode += "namespace Wayland" + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
-                        classCode += string.Format("{0}", classComment) + Environment.NewLine;
+                        classCode += BuildHeaderComment(@interface.Description) + Environment.NewLine;
                         classCode += string.Format("public partial class {0} : WaylandObject", ToTitleCase(@interface.Name)) + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
                         classCode += string.Format(@"public const string INTERFACE = ""{0}"";", @interface.Name) + Environment.NewLine;
-                        classCode += string.Format("public {0} (uint id, uint version, WaylandConnection connection) : base(id, version, connection)", ToTitleCase(@interface.Name)) + Environment.NewLine;
+                        classCode += string.Format("public {0} (uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, {1}, connection)", ToTitleCase(@interface.Name), @interface.Version) + Environment.NewLine;
                         classCode += "{";
                         classCode += "}";
                         classCode += BuildMethods(@interface.Requests) + Environment.NewLine;
                         classCode += BuildWaylandTypesHandler(@interface) + Environment.NewLine;
+                        classCode += BuildEnums(@interface) + Environment.NewLine;
                         classCode += "}" + Environment.NewLine;
                         classCode += "}" + Environment.NewLine;
 
@@ -64,7 +62,6 @@ namespace WaylandProtocal
                         streamWriter.WriteLine(CSharpSyntaxTree.ParseText(classCode).GetRoot().NormalizeWhitespace().ToFullString());
                     }
                 }
-
             }
         }
 
@@ -116,10 +113,26 @@ namespace WaylandProtocal
                     }
                     else
                     {
-                        waylandUseBase += string.Format("var {0} = ({1})arguments[{2}];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
+                        if (string.IsNullOrEmpty(arg.Enum))
+                        {
+                            waylandUseBase += string.Format("var {0} = ({1})arguments[{2}];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
+                        }
+                        else
+                        {
+                            waylandUseBase += string.Format("var {0} = ({1})arguments[{2}];", ToCamelCase(arg.Name), ToTitleCase(arg.Enum) + "Flag", i) + Environment.NewLine;
+                        }
                     }
 
-                    augumentsTypes.Add(GetType(arg.Type));
+                    
+                    if (string.IsNullOrEmpty(arg.Enum))
+                    {
+                        augumentsTypes.Add(GetType(arg.Type));
+                    }
+                    else
+                    {
+                        augumentsTypes.Add(ToTitleCase(arg.Enum) + "Flag");
+                    }
+
                     augumentsNames.Add(ToCamelCase(arg.Name));
 
                     i++;
@@ -131,6 +144,7 @@ namespace WaylandProtocal
                 waylandUseBase += string.Format(@"DebugLog.WriteLine($""{{ INTERFACE}}@{{this.id}}.{{ EventOpcode.{0} }}({1})"");" + Environment.NewLine, ToTitleCase(message.Name), string.Join(",", augumentsNames.Select(c => "{" + c + "}")));
                 waylandUseBase += "}";
 
+                actionEvents.Add(BuildHeaderComment(message.Description));
                 if (augumentsTypes.Count > 0)
                     actionEvents.Add(string.Format("public Action<{0}> {1};",string.Join(", ",augumentsTypes), ToCamelCase(message.Name)) + Environment.NewLine);
                 else
@@ -190,6 +204,7 @@ namespace WaylandProtocal
                 string returnType = "void";
                 string generateId = string.Empty;
                 string generateNew = string.Empty;
+                string generateNewSet = string.Empty;
                 opCodes.Add(ToTitleCase(message.Name));
 
                 foreach (Argument arg in message.Arguments)
@@ -199,15 +214,34 @@ namespace WaylandProtocal
                         arg.Name = "@interface";
                     }
 
-                    if (arg.Type != "object")
-                        methodArgsUsage.Add(arg.Name);
+                    if (arg.Type != "object") {
+                        
+                        if (string.IsNullOrEmpty(arg.Enum))
+                        {
+                            methodArgsUsage.Add(arg.Name);
+                        }
+                        else
+                        {
+                            methodArgsUsage.Add($"({arg.Type})" + arg.Name);
+                        }
+                    }
+                        
 
                     if (arg.Type == "new_id")
                     {
                         returnType = string.IsNullOrEmpty(arg.Interface) ? "T" : ToTitleCase(arg.Interface);
                         returnCall = $"return ({returnType})connection[{arg.Name}];";
                         generateId = $"uint {arg.Name} = connection.Create();";
-                        generateNew = string.IsNullOrEmpty(arg.Interface) ? $"connection[{arg.Name}] = (WaylandObject)Activator.CreateInstance(typeof(T),{arg.Name}, version, connection);" : $"connection[{arg.Name}] = new {returnType}({arg.Name}, version, connection);";
+                        if (string.IsNullOrEmpty(arg.Interface))
+                        {
+                            generateNew = $"WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, {arg.Name}, connection);" + Environment.NewLine;
+                            generateNew += $"{arg.Name} = wObject.id;";
+                        }
+                        else
+                        {
+                            generateNew = $"{returnType} wObject = new {returnType}(this.id, ref {arg.Name}, connection);";
+                        }
+                        generateNewSet = $"connection[{arg.Name}] = wObject;";
                         goto extraArgs;
                     }
 
@@ -217,7 +251,15 @@ namespace WaylandProtocal
                         methodArgs.Add(ToTitleCase(arg.Interface) + " " + arg.Name);
                         goto extraArgs;
                     }
-                    methodArgs.Add(GetType(arg.Type) + " " + arg.Name);
+                    if (string.IsNullOrEmpty(arg.Enum))
+                    { 
+                        methodArgs.Add(GetType(arg.Type) + " " + arg.Name);
+                    }
+                    else
+                    {
+                        methodArgs.Add(ToTitleCase(arg.Enum) + "Flag" + " " + arg.Name);
+                    }
+                   
 
                 extraArgs:
                     if (arg.Type == "new_id" && string.IsNullOrEmpty(arg.Interface))
@@ -234,11 +276,12 @@ namespace WaylandProtocal
                     methodArgsUsage[0] = ", " + methodArgsUsage[0];
                 }
 
-                string comment = string.Format(commentBase, message.Description.Summary);
+                //string comment = string.Format(commentBase, message.Description.Summary);
                 string methodName = ToTitleCase(message.Name);
 
                 string requestBase = string.Empty;
-                requestBase +=  string.Format("{0}" + Environment.NewLine, comment);
+                requestBase += BuildHeaderComment(message.Description) + Environment.NewLine;
+                requestBase += BuildParamsComment(message.Arguments) + Environment.NewLine;
                 if (returnType == "T")
                     requestBase += string.Format("public {0} {1}<T>({2}) where T : WaylandObject" + Environment.NewLine, returnType, methodName, string.Join(",", methodArgs));
                 else
@@ -246,6 +289,7 @@ namespace WaylandProtocal
 
                 requestBase += "{" + Environment.NewLine;
                 requestBase += string.Format("{0}" + Environment.NewLine, generateId);
+                requestBase += string.Format("{0}" + Environment.NewLine, generateNew);
                 requestBase += string.Format("connection.Marshal(this.id ,(ushort)RequestOpcode.{0}{1});" + Environment.NewLine, methodName, string.Join(",", methodArgsUsage));
 
                 if (methodArgsUsage.Count > 0)
@@ -254,7 +298,7 @@ namespace WaylandProtocal
                 }
 
                 requestBase += string.Format(@"DebugLog.WriteLine($""-->{{ INTERFACE}}@{{this.id}}.{{ RequestOpcode.{0} }}({1})"");" + Environment.NewLine, methodName, string.Join(",", methodArgsUsage.Select(c => "{"+c+"}")));
-                requestBase += string.Format("{0}" + Environment.NewLine, generateNew);
+                requestBase += string.Format("{0}" + Environment.NewLine, generateNewSet);
                 requestBase += string.Format("{0}" + Environment.NewLine, returnCall);
                 requestBase += "}" + Environment.NewLine;
                 
@@ -268,6 +312,112 @@ namespace WaylandProtocal
 
             stringBuilder.AppendLine(eventOpCodeBase);
 
+
+            return stringBuilder.ToString();
+        }
+
+        private static string BuildEnums(Interface @interface)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (XmlTypes.Enum @enum in @interface.Enums)
+            {
+                string entryValue = "";
+                foreach (Entry entry in @enum.Entries)
+                {
+                    entryValue += "///<Summary>"+ Environment.NewLine;
+                    entryValue += "///"+ entry.Summary + Environment.NewLine;
+                    entryValue += "///</Summary>" + Environment.NewLine;
+
+                    if (int.TryParse(entry.Name, out _))
+                        entryValue += "_" + entry.Name + " = "+ entry.Value + "," + Environment.NewLine;
+                    else if (entry.Name == "default")
+                        entryValue += ToTitleCase(entry.Name) + " = " + entry.Value + "," + Environment.NewLine;
+                    else
+                        entryValue += ToTitleCase(entry.Name) + " = " + entry.Value + "," + Environment.NewLine;
+                }
+                stringBuilder.AppendLine(
+                @$"
+                    {BuildHeaderComment(@enum.Description)}
+                    public enum {ToTitleCase(@enum.Name)}Flag: uint
+                    {{
+                        {entryValue}
+                    }}
+                ");
+            }
+             
+            return stringBuilder.ToString();
+        }
+
+        private static string BuildHeaderComment(Description description) 
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            if (description != null)
+            {
+                string comment = null;
+                string paras = "";
+
+                if (!string.IsNullOrEmpty(description.Content))
+                {
+                    List<string> paragraphs = description.Content.Split('\n').Select(c => c.TrimStart()).ToList();
+
+                    for (int i = 0; i < paragraphs.Count; i++)
+                    {
+                        if (i == 0 && paragraphs[i] == string.Empty)
+                        {
+                            paragraphs[i] = "///<para>";
+                        }
+                        else if (i == 0 && paragraphs[i] != string.Empty)
+                        {
+                            paragraphs.Insert(0, "///<para>");
+                            i++;
+                        }
+                        else if (i == paragraphs.Count - 1 && paragraphs[i] == string.Empty)
+                        {
+                            paragraphs[paragraphs.Count - 1] = "///</para>";
+                        }
+                        else if (paragraphs[i] == string.Empty)
+                        {
+                            paragraphs[i] = "///</para>";
+                            paragraphs.Insert(i + 1, "///<para>");
+                            i++;
+                        }
+                        else
+                        {
+                            paragraphs[i] = "///" + paragraphs[i];
+                        }
+                    }
+
+                    paragraphs.Select(c => paras += c + Environment.NewLine).ToArray();
+                }
+
+                if (!string.IsNullOrEmpty(description.Summary)) 
+                {
+                    comment = @$"///<Summary>
+                               ///{description.Summary}
+                               {paras}///</Summary>";
+                }
+
+                stringBuilder.Append(comment);
+            }
+            
+            return stringBuilder.ToString();
+        }
+
+        private static string BuildParamsComment(List<Argument> arguments)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            string comment = "";
+            foreach (Argument argument in arguments)
+            {
+                if (argument.Type != "new_id")
+                    comment += $@"///<param name=""{argument.Name}""> { argument.Summary} </param>" + Environment.NewLine;
+                else
+                    comment += $@"///<returns> { argument.Summary} </returns>" + Environment.NewLine;
+            }
+
+            stringBuilder.Append(comment);
 
             return stringBuilder.ToString();
         }
@@ -319,22 +469,6 @@ namespace WaylandProtocal
             return @string;
             
         }
-
-
-
-        private static string commentBase = @"
-                                /// <summary>
-                                /// {0}
-                                /// </summary>
-                                    ";
-
-        private static string enumBase = @"
-                                public enum {0} : ushort
-                                {
-                                    {0}
-                                }
-                                 ";
-
 
     }
 }

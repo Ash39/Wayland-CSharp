@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RestoreAdditionalProjectSources>
+      https://nuget-server.herokuapp.com/v3/index.json
+    </RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="dotnet ../WaylandProtocal/bin/Debug/net6.0/WaylandProtocal.dll Generated" />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wayland\Wayland.csproj" />
+  </ItemGroup>
+
+</Project>

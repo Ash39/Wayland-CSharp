@@ -13,6 +13,20 @@ namespace Wayland
     {
         public static WlDisplay Connect(string displayPath = null)
         {
+
+            WaylandConnection connection = ConnectSocket(displayPath);
+
+            uint id = connection.Create();
+            WlDisplay display = new WlDisplay(0,ref id, connection);
+            display.error += Error;
+            display.deleteId += Delete;
+            connection[id] = display;
+
+            return display;
+        }
+
+        private static WaylandConnection ConnectSocket(string displayPath) 
+        {
             displayPath ??= Environment.GetEnvironmentVariable("WAYLAND_DISPLAY");
             displayPath ??= "wayland-0";
 
@@ -28,15 +42,8 @@ namespace Wayland
                     throw new Exception("XDG_RUNTIME_DIR missing from environment");
                 path = Path.Join(xdgRuntimeDir, displayPath);
             }
-            WaylandConnection connection = new WaylandConnection(path);
 
-            uint id = connection.Create();
-            WlDisplay display = new WlDisplay(id, 1, connection);
-            display.error += Error;
-            display.deleteId += Delete;
-            connection[id] = display;
-
-            return display;
+            return new WaylandConnection(path);
         }
 
         private static void Delete(WlDisplay display, uint id)

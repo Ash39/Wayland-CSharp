@@ -14,12 +14,15 @@ namespace Wayland
         private WaylandSocket socket;
         private Queue<uint> freeIds;
         private Queue<Action> events = new Queue<Action>();
-        private WaylandObject[] objects;
+        private List<WaylandObject> objects;
 
         private const uint ClientRangeBegin = 0x00000001;
-        private const uint ClientRangeEnd = 9000000;
+        private const uint ClientRangeEnd = 0xFEFFFFFF;
         private const uint ServerRangeBegin = 0xff000000;
         private const uint ServerRangeEnd = 0xffffffff;
+
+        internal Func<uint, (IntPtr handle, uint id, uint version)> GetHandle;
+        private Action<IntPtr> DeleteHandle; 
 
         private uint beginRange;
         private uint endRange;
@@ -31,7 +34,8 @@ namespace Wayland
         public WaylandConnection(string socket,bool client = true)
         {
             this.socket = new WaylandSocket(socket);
-
+            this.GetHandle = (factoryId) => { return (IntPtr.Zero, 0, 0); };
+            this.DeleteHandle = null;
             if (client) 
             {
                 beginRange = ClientRangeBegin;
@@ -43,18 +47,41 @@ namespace Wayland
                 endRange = ServerRangeEnd;
             }
 
-            objects = new WaylandObject[endRange];
-            freeIds = new Queue<uint>((int)endRange);
-            for (uint i = beginRange; i < endRange; i++)
-            {
-                freeIds.Enqueue(i);
-            }
-
+            objects = new List<WaylandObject>();
+            freeIds = new Queue<uint>();
         }
 
         public uint Create() 
         {
-            return freeIds.Dequeue();
+            if (DeleteHandle == null) 
+            {
+                if (freeIds.Count > 0)
+                {
+                    return freeIds.Dequeue();
+                }
+                else
+                {
+                    uint id = ((uint)objects.Count) + ClientRangeBegin;
+                    if (id >= beginRange && id <= endRange)
+                    {
+                        objects.Add(null);
+                        return id;
+                    }
+                    else
+                        throw new IndexOutOfRangeException();
+                }
+                
+            }
+            else
+            {
+                return 0;
+            }
+            
+        }
+
+        public void Get(uint id) 
+        {
+            freeIds = new Queue<uint>(freeIds.Where(c => c != id));
         }
 
         internal int Flush()
@@ -67,6 +94,7 @@ namespace Wayland
         {
             if (id >= beginRange && id <= endRange)
             {
+                DeleteHandle?.Invoke(this[id].handle);
                 freeIds.Enqueue(id);
                 this[id] = null;
             }

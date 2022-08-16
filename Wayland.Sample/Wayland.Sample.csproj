@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StbImageSharp" Version="2.27.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wayland.Compatibility\Wayland.Compatibility.csproj" />
+    <ProjectReference Include="..\Wayland.Linux.Dmabuf\Wayland.Linux.Dmabuf.csproj" />
+    <ProjectReference Include="..\Wayland.XdgShell\Wayland.XdgShell.csproj" />
+    <ProjectReference Include="..\Wayland\Wayland.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Images\Royden Take Away Lunch-1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
