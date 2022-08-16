@@ -19,7 +19,9 @@ jobs:
         dotnet-version: 6.x.x
     - name: Restore dependencies
       run: dotnet restore "Wayland C#.sln"
-    - name: Build
+    - name: Build 1
+      run: dotnet build WaylandProtocal/WaylandProtocal.csproj -c Release --no-restore /p:DOTNET_RUNNING_IN_CONTAINER=true
+    - name: Build 2
       run: dotnet build "Wayland C#.sln" -c Release --no-restore /p:DOTNET_RUNNING_IN_CONTAINER=true
     - name: Upload Nuget Package
       env:
