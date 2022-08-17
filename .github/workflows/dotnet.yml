@@ -20,7 +20,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore "Wayland C#.sln"
     - name: Build 1
-      run: ls
+      run: dotnet build WaylandProtocal
+    - name: List
+      run: ls WaylandProtocal
     - name: Build 2
       run: dotnet build "Wayland C#.sln" -c Release --no-restore /p:DOTNET_RUNNING_IN_CONTAINER=true
     - name: Upload Nuget Package
