@@ -10,17 +10,17 @@
     <PackageReference Include="StbImageSharp" Version="2.27.11" />
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">
+    <Build>$([System.DateTime]::op_Subtraction($([System.DateTime]::get_Now().get_Date()),$([System.DateTime]::new(2000,1,1))).get_TotalDays())</Build>
+    <Revision>$([MSBuild]::Divide($([System.DateTime]::get_Now().get_TimeOfDay().get_TotalSeconds()), 2).ToString('F0'))</Revision>
+    <Version>0.0.$(Build).$(Revision)</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Wayland.Compatibility\Wayland.Compatibility.csproj" />
     <ProjectReference Include="..\Wayland.Linux.Dmabuf\Wayland.Linux.Dmabuf.csproj" />
     <ProjectReference Include="..\Wayland.XdgShell\Wayland.XdgShell.csproj" />
     <ProjectReference Include="..\Wayland\Wayland.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Images\Royden Take Away Lunch-1.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
