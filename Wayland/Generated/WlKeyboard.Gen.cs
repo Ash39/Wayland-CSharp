@@ -13,7 +13,7 @@ namespace Wayland
     public partial class WlKeyboard : WaylandObject
     {
         public const string INTERFACE = "wl_keyboard";
-        public WlKeyboard(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 8, connection)
+        public WlKeyboard(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
         {
         }
 

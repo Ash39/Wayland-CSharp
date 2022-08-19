@@ -6,7 +6,7 @@ namespace Wayland
     public partial class WlDrm : WaylandObject
     {
         public const string INTERFACE = "wl_drm";
-        public WlDrm(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 2, connection)
+        public WlDrm(uint factoryId, ref uint id, WaylandConnection connection, uint version = 2) : base(factoryId, ref id, version, connection)
         {
         }
 

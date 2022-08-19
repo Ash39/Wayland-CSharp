@@ -41,7 +41,7 @@ namespace Wayland
     public partial class XdgPopup : WaylandObject
     {
         public const string INTERFACE = "xdg_popup";
-        public XdgPopup(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 5, connection)
+        public XdgPopup(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
         {
         }
 

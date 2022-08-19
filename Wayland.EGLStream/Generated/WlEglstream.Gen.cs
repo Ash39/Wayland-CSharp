@@ -6,7 +6,7 @@ namespace Wayland
     public partial class WlEglstream : WaylandObject
     {
         public const string INTERFACE = "wl_eglstream";
-        public WlEglstream(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
+        public WlEglstream(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
         {
         }
 

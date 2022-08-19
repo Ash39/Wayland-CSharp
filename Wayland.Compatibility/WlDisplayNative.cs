@@ -24,11 +24,10 @@ namespace Wayland.Compatibility
 
 			wl_display* dis = (wl_display*)displayPtr.ToPointer();
 
-			connection.Create();
             connection.Get(dis->proxy.@object.id);
             WlDisplay display = new WlDisplay(0,ref dis->proxy.@object.id, connection);
 
-			display.handle = (IntPtr)displayPtr;
+			display.handle = displayPtr;
 
 			display.error += Error;
 			display.deleteId += Delete;
@@ -38,7 +37,6 @@ namespace Wayland.Compatibility
 			{
 				wl_proxy* proxy = ProxyCreate((wl_proxy*)connection[factoryId].handle, connection[factoryId].handle);
 
-				connection.Create();
 				connection.Get(proxy->@object.id);
 
 				return ((IntPtr)proxy, proxy->@object.id, proxy->version);
@@ -129,11 +127,11 @@ namespace Wayland.Compatibility
 			public void* data;
 		}
 
-		[StructLayout(LayoutKind.Sequential, Pack = 8)]
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
 		unsafe struct wl_interface
 		{
 			/** Interface name */
-			public IntPtr name;
+			public char* name;
 			/** Interface version */
 			public int version;
 			/** Number of methods (requests) */
@@ -157,37 +155,25 @@ namespace Wayland.Compatibility
 			public wl_interface **types;
 };
 
-		[StructLayout(LayoutKind.Explicit)]
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
 		unsafe struct wl_proxy 
 		{
-            [FieldOffset(0)]
 			public wl_object @object;
-			[FieldOffset(20)]
 			public IntPtr display;
-			[FieldOffset(28)]
 			public IntPtr queue;
-			[FieldOffset(36)]
 			public uint flags;
-			[FieldOffset(40)]
 			public int refcount;
-			[FieldOffset(44)]
 			public IntPtr user_data;
-			[FieldOffset(52)]
 			public IntPtr dispatcher;
-			[FieldOffset(60)]
 			public uint version;
-			[FieldOffset(64)]
 			public IntPtr tag;
 		}
 
-		[StructLayout(LayoutKind.Explicit)]
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
 		struct wl_object
 		{
-			[FieldOffset(0)]
 			public IntPtr @interface;
-			[FieldOffset(8)]
 			public IntPtr implementation;
-			[FieldOffset(16)]
 			public uint id;
 		};
 

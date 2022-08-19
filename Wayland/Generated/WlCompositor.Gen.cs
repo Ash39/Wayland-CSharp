@@ -14,7 +14,7 @@ namespace Wayland
     public partial class WlCompositor : WaylandObject
     {
         public const string INTERFACE = "wl_compositor";
-        public WlCompositor(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 5, connection)
+        public WlCompositor(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
         {
         }
 

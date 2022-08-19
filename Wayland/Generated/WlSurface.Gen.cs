@@ -57,7 +57,7 @@ namespace Wayland
     public partial class WlSurface : WaylandObject
     {
         public const string INTERFACE = "wl_surface";
-        public WlSurface(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 5, connection)
+        public WlSurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
         {
         }
 

@@ -17,7 +17,7 @@ namespace Wayland
     public partial class WlOutput : WaylandObject
     {
         public const string INTERFACE = "wl_output";
-        public WlOutput(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 4, connection)
+        public WlOutput(uint factoryId, ref uint id, WaylandConnection connection, uint version = 4) : base(factoryId, ref id, version, connection)
         {
         }
 

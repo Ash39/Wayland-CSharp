@@ -33,7 +33,7 @@ namespace Wayland
     public partial class WlRegistry : WaylandObject
     {
         public const string INTERFACE = "wl_registry";
-        public WlRegistry(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
+        public WlRegistry(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
         {
         }
 
@@ -50,7 +50,7 @@ namespace Wayland
             where T : WaylandObject
         {
             uint id = connection.Create();
-            WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, id, connection);
+            WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, id, connection, version);
             id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.Bind, name, @interface, version, id);
             DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Bind}({name},{@interface},{version},{id})");

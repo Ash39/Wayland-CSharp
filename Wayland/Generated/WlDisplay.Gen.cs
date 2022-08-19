@@ -13,7 +13,7 @@ namespace Wayland
     public partial class WlDisplay : WaylandObject
     {
         public const string INTERFACE = "wl_display";
-        public WlDisplay(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
+        public WlDisplay(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
         {
         }
 

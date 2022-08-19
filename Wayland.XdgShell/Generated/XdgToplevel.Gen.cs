@@ -30,7 +30,7 @@ namespace Wayland
     public partial class XdgToplevel : WaylandObject
     {
         public const string INTERFACE = "xdg_toplevel";
-        public XdgToplevel(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 5, connection)
+        public XdgToplevel(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
         {
         }
 

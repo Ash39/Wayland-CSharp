@@ -10,7 +10,6 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
     {
         static WlDisplay display;
         static WlCompositor compositor;
-        static WlShell shell;
         static WlShm wl_shm;
         static XdgWmBase xdgWm;
         static XdgSurface xdgSurface;
@@ -25,7 +24,7 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
 
         static void Main(string[] args)
         {
-            display = WlDisplay.Connect();
+            display = WlDisplayNative.Connect();
 
             WlRegistry registry = display.GetRegistry();
 
@@ -35,15 +34,12 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
             display.Roundtrip();
 
             surface = compositor.CreateSurface();
-            //xdgSurface = xdgWm.GetXdgSurface(surface);
-            //xdgSurface.configure = Configure;
-            //XdgToplevel xdgToplevel = xdgSurface.GetToplevel();
-            //xdgToplevel.SetTitle("GameWindow");
+            xdgSurface = xdgWm.GetXdgSurface(surface);
+            xdgSurface.configure += Configure;
+            XdgToplevel xdgToplevel = xdgSurface.GetToplevel();
+            xdgToplevel.SetTitle("Game Window");
 
-            WlShellSurface shellSurface = shell.GetShellSurface(surface);
-            shellSurface.ping += Ping;
-            shellSurface.SetToplevel();
-            shellSurface.SetTitle("Game Window");
+            
 
             width = 1270;
             height = 800;
@@ -59,33 +55,13 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
 
                 using (Stream fileStream = File.Open("Images/blue_panel.png", FileMode.Open))
                 {
-                    ImageResult result = ImageResult.FromStream(fileStream);
-                    viewStream.Read(result.Data, 0, result.Data.Length);
+                    ImageResult result = ImageResult.FromStream(fileStream, ColorComponents.RedGreenBlue);
+                   
+                    viewStream.Write(result.Data, 0, result.Data.Length);
                 }
             };
 
-
-            wl_shm.format += (@object, format) =>
-            {
-                Console.WriteLine("Suface Format: " + format);
-            };
-
-            WlShmPool pool = wl_shm.CreatePool(memoryMappedFile.SafeMemoryMappedFileHandle.DangerousGetHandle(), size);
-
-            WlBuffer buffer = pool.CreateBuffer(offset, width, height, stride, WlShm.FormatFlag.Xrgb8888);
-
-            buffer.release += (buf) =>
-            {
-                buf.Destroy();
-            };
-
-            pool.Destroy();
-
-            surface.Attach(buffer, 0, 0);
             surface.Commit();
-
-            
-
             while (true)
             {
                 display.Dispatch();
@@ -121,11 +97,6 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
             surface.Commit();
         }
 
-        private static void Ping(WlShellSurface shellSurface, uint serial)
-        {
-            shellSurface.Pong(serial);
-        }
-
         private static void globalRemoveCallback(WlRegistry registry, uint name)
         {
             Console.WriteLine("Object Deleted");
@@ -139,11 +110,6 @@ namespace Wayland.Sample // Note: actual namespace depends on the project name.
            {
                Console.WriteLine("Using Interface:" + wlinterface);
                compositor = registery.Bind<WlCompositor>(name, wlinterface, version);
-           }
-           else if (wlinterface == WlShell.INTERFACE)
-           {
-               Console.WriteLine("Using Interface:" + wlinterface);
-               shell = registery.Bind<WlShell>(name, wlinterface, version);
            }
            else if (wlinterface == WlShm.INTERFACE)
            {

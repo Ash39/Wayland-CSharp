@@ -24,7 +24,7 @@ namespace Wayland
     public partial class WlShellSurface : WaylandObject
     {
         public const string INTERFACE = "wl_shell_surface";
-        public WlShellSurface(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
+        public WlShellSurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
         {
         }
 

@@ -20,7 +20,7 @@ namespace Wayland
     public partial class WlPointer : WaylandObject
     {
         public const string INTERFACE = "wl_pointer";
-        public WlPointer(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 8, connection)
+        public WlPointer(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
         {
         }
 

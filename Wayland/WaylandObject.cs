@@ -10,7 +10,7 @@ namespace Wayland
     {
         public uint id;
         public IntPtr handle;
-        protected uint version;
+        protected uint version { get; set; }
         protected WaylandConnection connection;
 
         protected WaylandObject(uint factoryId ,ref uint id, uint version, WaylandConnection connection)

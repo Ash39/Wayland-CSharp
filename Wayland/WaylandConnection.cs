@@ -81,7 +81,12 @@ namespace Wayland
 
         public void Get(uint id) 
         {
-            freeIds = new Queue<uint>(freeIds.Where(c => c != id));
+            if (id >= beginRange && id <= endRange)
+            {
+                objects.Add(null);
+            }
+            else
+                throw new IndexOutOfRangeException();
         }
 
         internal int Flush()

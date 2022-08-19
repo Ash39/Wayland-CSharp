@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlBuffer : WaylandObject
     {
         public const string INTERFACE = "wl_buffer";
-        public WlBuffer(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 1, connection)
+        public WlBuffer(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
         {
         }
 

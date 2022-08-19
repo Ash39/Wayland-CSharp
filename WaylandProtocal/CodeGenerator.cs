@@ -49,7 +49,7 @@ namespace WaylandProtocal
                         classCode += string.Format("public partial class {0} : WaylandObject", ToTitleCase(@interface.Name)) + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
                         classCode += string.Format(@"public const string INTERFACE = ""{0}"";", @interface.Name) + Environment.NewLine;
-                        classCode += string.Format("public {0} (uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, {1}, connection)", ToTitleCase(@interface.Name), @interface.Version) + Environment.NewLine;
+                        classCode += string.Format("public {0} (uint factoryId, ref uint id, WaylandConnection connection, uint version = {1}) : base(factoryId, ref id, version, connection)", ToTitleCase(@interface.Name), @interface.Version) + Environment.NewLine;
                         classCode += "{";
                         classCode += "}";
                         classCode += BuildMethods(@interface.Requests) + Environment.NewLine;
@@ -234,7 +234,7 @@ namespace WaylandProtocal
                         generateId = $"uint {arg.Name} = connection.Create();";
                         if (string.IsNullOrEmpty(arg.Interface))
                         {
-                            generateNew = $"WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, {arg.Name}, connection);" + Environment.NewLine;
+                            generateNew = $"WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, {arg.Name}, connection, version);" + Environment.NewLine;
                             generateNew += $"{arg.Name} = wObject.id;";
                         }
                         else

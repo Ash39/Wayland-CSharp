@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlDataDeviceManager : WaylandObject
     {
         public const string INTERFACE = "wl_data_device_manager";
-        public WlDataDeviceManager(uint factoryId, ref uint id, WaylandConnection connection) : base(factoryId, ref id, 3, connection)
+        public WlDataDeviceManager(uint factoryId, ref uint id, WaylandConnection connection, uint version = 3) : base(factoryId, ref id, version, connection)
         {
         }
 

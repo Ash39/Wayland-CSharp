@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RestoreAdditionalProjectSources>
       https://nuget-server.herokuapp.com/v3/index.json
     </RestoreAdditionalProjectSources>
@@ -14,6 +13,7 @@
   </Target>
 
   <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Build>$([System.DateTime]::op_Subtraction($([System.DateTime]::get_Now().get_Date()),$([System.DateTime]::new(2000,1,1))).get_TotalDays())</Build>
     <Revision>$([MSBuild]::Divide($([System.DateTime]::get_Now().get_TimeOfDay().get_TotalSeconds()), 2).ToString('F0'))</Revision>
     <Version>1.0.$(Build).$(Revision)</Version>
