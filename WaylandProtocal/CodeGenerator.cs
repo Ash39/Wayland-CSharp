@@ -111,6 +111,13 @@ namespace WaylandProtocal
                     {
                         waylandUseBase += string.Format("var {0} = connection[(uint)arguments[{2}]];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
                     }
+                    else if (wtype == "new_id")
+                    {
+                        wtype = ToTitleCase(arg.Interface);
+                        waylandUseBase += $@"uint new_id = (uint)arguments[{i}];" + Environment.NewLine;
+                        waylandUseBase += string.Format("{0} {1} = new {0}(this.id, ref new_id, connection);", wtype, ToCamelCase(arg.Name)) + Environment.NewLine;
+                        waylandUseBase += $"connection.ServerObjectAdd({ToCamelCase(arg.Name)});" + Environment.NewLine;
+                    }
                     else
                     {
                         if (string.IsNullOrEmpty(arg.Enum))
@@ -126,7 +133,7 @@ namespace WaylandProtocal
                     
                     if (string.IsNullOrEmpty(arg.Enum))
                     {
-                        augumentsTypes.Add(GetType(arg.Type));
+                        augumentsTypes.Add(wtype);
                     }
                     else
                     {
@@ -426,14 +433,13 @@ namespace WaylandProtocal
         {
             switch (type)
             {
+                case "new_id":
                 case "int":
                 case "uint":
                 case "string":
                     return type;
                 case "fd":
                     return "IntPtr";
-                case "new_id":
-                    return "int";
                 case "fixed":
                     return "double";
                 case "array":

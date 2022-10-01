@@ -15,19 +15,21 @@ namespace Wayland
         private Queue<uint> freeIds;
         private Queue<Action> events = new Queue<Action>();
         private List<WaylandObject> objects;
+        private List<WaylandObject> serverObjects;
+
 
         private const uint ClientRangeBegin = 0x00000001;
         private const uint ClientRangeEnd = 0xFEFFFFFF;
         private const uint ServerRangeBegin = 0xff000000;
         private const uint ServerRangeEnd = 0xffffffff;
 
-        internal Func<uint, (IntPtr handle, uint id, uint version)> GetHandle;
+        public Func<uint, (IntPtr handle, uint id, uint version)> GetHandle;
         private Action<IntPtr> DeleteHandle; 
 
         private uint beginRange;
         private uint endRange;
 
-        internal int position;
+        internal int position => socket.position;
 
         public Queue<Action> Events { get => events;}
 
@@ -49,6 +51,8 @@ namespace Wayland
 
             objects = new List<WaylandObject>();
             freeIds = new Queue<uint>();
+
+            serverObjects = new List<WaylandObject>();
         }
 
         public uint Create() 
@@ -79,6 +83,17 @@ namespace Wayland
             
         }
 
+        public void ServerObjectAdd(WaylandObject @object) 
+        {
+            if (@object.id >= ServerRangeBegin && @object.id <= ServerRangeEnd)
+            {
+                serverObjects.Add(@object);
+            }
+            else
+                throw new IndexOutOfRangeException();
+        }
+
+
         public void Get(uint id) 
         {
             if (id >= beginRange && id <= endRange)
@@ -91,7 +106,6 @@ namespace Wayland
 
         internal int Flush()
         {
-            position = 0;
             return socket.Flush();
         }
 
@@ -103,6 +117,11 @@ namespace Wayland
                 freeIds.Enqueue(id);
                 this[id] = null;
             }
+            else if (id >= ServerRangeBegin && id <= ServerRangeEnd)
+            {
+                DeleteHandle?.Invoke(this[id].handle);
+                serverObjects.Remove(serverObjects.Single(c => c.id == id));
+            }
             else
                 throw new IndexOutOfRangeException();
         }
@@ -113,6 +132,8 @@ namespace Wayland
             {
                 if (id >= beginRange && id <= endRange)
                     return objects[(int)(id - beginRange)];
+                else if(id >= ServerRangeBegin && id <= ServerRangeEnd)
+                    return serverObjects[(int)(id - ServerRangeBegin)];
                 else
                     return null;
             }
@@ -120,6 +141,8 @@ namespace Wayland
             {
                 if (id >= beginRange && id <= endRange)
                     objects[(int)(id - beginRange)] = value;
+                else if(id >= ServerRangeBegin && id <= ServerRangeEnd)
+                    serverObjects[(int)(id - ServerRangeBegin)] = value;
                 else
                     throw new IndexOutOfRangeException();
             }
@@ -188,12 +211,13 @@ namespace Wayland
 
         public bool Read() 
         {
+        
             var header = socket.ReadHeader();
 
-            position += (int)header.length;
 
-            if(objects.ElementAtOrDefault((int)(header.id - beginRange)) == null)
+            if(objects.ElementAtOrDefault((int)(header.id - beginRange)) == null && serverObjects.ElementAtOrDefault((int)(header.id - ServerRangeBegin)) == null)
                 return false;
+
             WaylandType[] types = this[header.id].WaylandTypes(header.opCode);
 
             object[] args = new object[types.Length];

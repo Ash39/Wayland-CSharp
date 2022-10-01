@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WaylandProtocal\WaylandProtocal.csproj" />
+    <ProjectReference Include="..\Wayland\Wayland.csproj" />
   </ItemGroup>
 
 </Project>

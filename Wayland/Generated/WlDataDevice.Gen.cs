@@ -117,7 +117,7 @@ namespace Wayland
         ///mime types it offers.
         ///</para>
         ///</Summary>
-        public Action<WlDataDevice, int> dataOffer;
+        public Action<WlDataDevice, WlDataOffer> dataOffer;
         ///<Summary>
         ///initiate drag-and-drop session
         ///<para>
@@ -202,7 +202,9 @@ namespace Wayland
             {
                 case EventOpcode.DataOffer:
                 {
-                    var id = (int)arguments[0];
+                    uint new_id = (uint)arguments[0];
+                    WlDataOffer id = new WlDataOffer(this.id, ref new_id, connection);
+                    connection.ServerObjectAdd(id);
                     if (this.dataOffer != null)
                     {
                         this.dataOffer.Invoke(this, id);

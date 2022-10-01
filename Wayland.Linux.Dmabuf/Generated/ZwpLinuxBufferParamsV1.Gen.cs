@@ -228,7 +228,7 @@ namespace Wayland
         ///zlinux_dmabuf_params object.
         ///</para>
         ///</Summary>
-        public Action<ZwpLinuxBufferParamsV1, int> created;
+        public Action<ZwpLinuxBufferParamsV1, WlBuffer> created;
         ///<Summary>
         ///buffer creation failed
         ///<para>
@@ -254,7 +254,9 @@ namespace Wayland
             {
                 case EventOpcode.Created:
                 {
-                    var buffer = (int)arguments[0];
+                    uint new_id = (uint)arguments[0];
+                    WlBuffer buffer = new WlBuffer(this.id, ref new_id, connection);
+                    connection.ServerObjectAdd(buffer);
                     if (this.created != null)
                     {
                         this.created.Invoke(this, buffer);

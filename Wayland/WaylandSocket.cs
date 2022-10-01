@@ -23,6 +23,7 @@ namespace Wayland
         internal int position;
         internal int fdPosition;
 
+
         public WaylandSocket(string address)
         {
             socket = Syscall.socket(UnixAddressFamily.AF_UNIX, UnixSocketType.SOCK_STREAM, 0);
@@ -91,7 +92,8 @@ namespace Wayland
 
             Pollfd[] pollfds = new Pollfd[] { new Pollfd { events = PollEvents.POLLIN, fd = socket } };
 
-            int result = Syscall.poll(pollfds, 20);
+            int result = Syscall.poll(pollfds, -1);
+            
 
             if (result > 0 && !pollfds[0].revents.HasFlag(PollEvents.POLLHUP)) 
             {
@@ -133,24 +135,18 @@ namespace Wayland
                 {
                     // Extract the bytes
                     var recvHdr = Cmsghdr.ReadFromBuffer(msghdr, offset);
-                    //DebugHelper.WriteLine("Buffer has, recvHdr.cmsg_len: {0}", recvHdr.cmsg_len);
 
                     // See how many bytes are of file descriptors we have
                     var recvDataOffset = Syscall.CMSG_DATA(msghdr, offset);
-                    //var userData = recvHdr.cmsg_len - (int)Syscall.CMSG_LEN(0);
                     var bytes = recvHdr.cmsg_len - (recvDataOffset - offset);
                     var fdCount = bytes / sizeof(int);
                     readFdBuffer = new int[fdCount];
-                    //DebugHelper.WriteLine("Got {0} fds ({1} bytes)", fdCount, bytes);
 
                     // Extract the file descriptors
                     for (int i = 0; i < fdCount; i++)
                     {
                         readFdBuffer[i] = BitConverter.ToInt32(msghdr.msg_control, (int)(recvDataOffset + (sizeof(int) * i)));
-                        //DebugHelper.WriteLine($"fd[{i}] = {fds[i]}");
                     }
-
-                    //DebugHelper.WriteLine("Read {0} fds and {1} bytes", fds.Length, data.Length);
 
                     // Check that we only have a single message
                     offset = Syscall.CMSG_NXTHDR(msghdr, offset);
@@ -272,6 +268,7 @@ namespace Wayland
 
         public int ReadInt()
         {
+            if(readBuffer.Length <= position) return -1; 
             if(BitConverter.IsLittleEndian)
                 return BinaryPrimitives.ReadInt32LittleEndian(InternalRead(4));
             else
@@ -280,6 +277,7 @@ namespace Wayland
 
         public uint ReadUInt()
         {
+            if(readBuffer.Length <= position) return 0;
             if(BitConverter.IsLittleEndian)
                 return BinaryPrimitives.ReadUInt32LittleEndian(InternalRead(4));
             else
@@ -288,6 +286,7 @@ namespace Wayland
 
         public double ReadDouble()
         {
+            if(readBuffer.Length <= position) return -1.0;
             if(BitConverter.IsLittleEndian)
                 return BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(InternalRead(8)));
             else
@@ -296,6 +295,7 @@ namespace Wayland
 
         public string ReadString()
         {
+            if(readBuffer.Length <= position) return string.Empty; 
             byte[] bytes = ReadBytes();
             byte[] bytesWithoutNull = new byte[bytes.Length - 1];
             Array.Copy(bytes, bytesWithoutNull, bytesWithoutNull.Length);
@@ -304,7 +304,9 @@ namespace Wayland
 
         public byte[] ReadBytes()
         {
+            if(readBuffer.Length <= position) return null; 
             int length = (int)ReadUInt();
+            if(length <= 0) return null; 
             int paddedLength = (length + 3) / 4 * 4;
             byte[] bytes = InternalRead(length);
             InternalRead(paddedLength - length);

@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,8 +20,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Wayland.Compatibility\Wayland.Compatibility.csproj" />
     <ProjectReference Include="..\Wayland.Linux.Dmabuf\Wayland.Linux.Dmabuf.csproj" />
+    <ProjectReference Include="..\Wayland.DRM\Wayland.DRM.csproj" />
     <ProjectReference Include="..\Wayland.XdgShell\Wayland.XdgShell.csproj" />
     <ProjectReference Include="..\Wayland\Wayland.csproj" />
+    <ProjectReference Include="..\..\OpenGL.Net\OpenGL.Net\OpenGL.Net.csproj" />
+    <ProjectReference Include="..\..\OpenGL.Net\OpenGL.Net\OpenGL.Net.Math.csproj" />
   </ItemGroup>
 
   <ItemGroup>

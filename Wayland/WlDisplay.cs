@@ -56,7 +56,7 @@ namespace Wayland
             throw new Exception($"Error {code} object {@object.id}: {message}");
         }
 
-        public void Dispatch() 
+        public bool Dispatch() 
         {
             int length = connection.Flush();
 
@@ -65,15 +65,18 @@ namespace Wayland
                 if (!connection.Read())
                     break;
             }
-            DispatchPending();
+            return DispatchPending();
         }
         
-        public void DispatchPending() 
+        public bool DispatchPending() 
         {
+            if(connection.Events.Count == 0) return false;
+
             while (connection.Events.Count > 0)
             {
                 connection.Events.Dequeue().Invoke();
             }
+            return true;
         }
 
         public void Roundtrip()
