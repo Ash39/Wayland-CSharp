@@ -7,3 +7,7 @@ A downside of not using libwayland is that the presentation engine for Vulkan an
 Opengl Es - Works <br />
 Opengl - Not Implemented <br />
 Vulkan - Not Implemented <br />
+
+Issues:
+1. Event Queue not Implemented properly.
+2. Frames are being skipped.
