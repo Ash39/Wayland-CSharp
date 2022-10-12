@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlShm : WaylandObject
     {
         public const string INTERFACE = "wl_shm";
-        public WlShm(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlShm(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -42,12 +42,11 @@ namespace Wayland
         ///<param name = "size"> pool size, in bytes </param>
         public WlShmPool CreatePool(IntPtr fd, int size)
         {
-            uint id = connection.Create();
-            WlShmPool wObject = new WlShmPool(this.id, ref id, connection);
+            WlShmPool wObject = connection.Create<WlShmPool>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreatePool, id, fd, size);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreatePool}({id},{fd},{size})");
-            connection[id] = wObject;
-            return (WlShmPool)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreatePool", id, fd, size);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -69,24 +68,24 @@ namespace Wayland
             Format
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Format:
                 {
-                    var format = (FormatFlag)arguments[0];
+                    var format = (FormatFlag)arguments[0].u;
                     if (this.format != null)
                     {
                         this.format.Invoke(this, format);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Format}({this},{format})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Format");
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -97,7 +96,7 @@ namespace Wayland
                 case EventOpcode.Format:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

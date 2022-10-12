@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlDataDeviceManager : WaylandObject
     {
         public const string INTERFACE = "wl_data_device_manager";
-        public WlDataDeviceManager(uint factoryId, ref uint id, WaylandConnection connection, uint version = 3) : base(factoryId, ref id, version, connection)
+        public WlDataDeviceManager(uint id, WaylandConnection connection, uint version = 3) : base(id, version, connection)
         {
         }
 
@@ -35,12 +35,11 @@ namespace Wayland
         ///<returns> data source to create </returns>
         public WlDataSource CreateDataSource()
         {
-            uint id = connection.Create();
-            WlDataSource wObject = new WlDataSource(this.id, ref id, connection);
+            WlDataSource wObject = connection.Create<WlDataSource>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateDataSource, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateDataSource}({id})");
-            connection[id] = wObject;
-            return (WlDataSource)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateDataSource", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -53,12 +52,11 @@ namespace Wayland
         ///<param name = "seat"> seat associated with the data device </param>
         public WlDataDevice GetDataDevice(WlSeat seat)
         {
-            uint id = connection.Create();
-            WlDataDevice wObject = new WlDataDevice(this.id, ref id, connection);
+            WlDataDevice wObject = connection.Create<WlDataDevice>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetDataDevice, id, seat.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetDataDevice}({id},{seat.id})");
-            connection[id] = wObject;
-            return (WlDataDevice)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetDataDevice", id, seat.id);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -71,12 +69,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -85,7 +83,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

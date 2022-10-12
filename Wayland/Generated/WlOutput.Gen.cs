@@ -17,7 +17,7 @@ namespace Wayland
     public partial class WlOutput : WaylandObject
     {
         public const string INTERFACE = "wl_output";
-        public WlOutput(uint factoryId, ref uint id, WaylandConnection connection, uint version = 4) : base(factoryId, ref id, version, connection)
+        public WlOutput(uint id, WaylandConnection connection, uint version = 4) : base(id, version, connection)
         {
         }
 
@@ -31,7 +31,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -224,24 +224,24 @@ namespace Wayland
             Description
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Geometry:
                 {
-                    var x = (int)arguments[0];
-                    var y = (int)arguments[1];
-                    var physicalWidth = (int)arguments[2];
-                    var physicalHeight = (int)arguments[3];
-                    var subpixel = (SubpixelFlag)arguments[4];
-                    var make = (string)arguments[5];
-                    var model = (string)arguments[6];
-                    var transform = (TransformFlag)arguments[7];
+                    var x = arguments[0].i;
+                    var y = arguments[1].i;
+                    var physicalWidth = arguments[2].i;
+                    var physicalHeight = arguments[3].i;
+                    var subpixel = (SubpixelFlag)arguments[4].u;
+                    var make = arguments[5].s;
+                    var model = arguments[6].s;
+                    var transform = (TransformFlag)arguments[7].u;
                     if (this.geometry != null)
                     {
                         this.geometry.Invoke(this, x, y, physicalWidth, physicalHeight, subpixel, make, model, transform);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Geometry}({this},{x},{y},{physicalWidth},{physicalHeight},{subpixel},{make},{model},{transform})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Geometry");
                     }
 
                     break;
@@ -249,14 +249,14 @@ namespace Wayland
 
                 case EventOpcode.Mode:
                 {
-                    var flags = (ModeFlag)arguments[0];
-                    var width = (int)arguments[1];
-                    var height = (int)arguments[2];
-                    var refresh = (int)arguments[3];
+                    var flags = (ModeFlag)arguments[0].u;
+                    var width = arguments[1].i;
+                    var height = arguments[2].i;
+                    var refresh = arguments[3].i;
                     if (this.mode != null)
                     {
                         this.mode.Invoke(this, flags, width, height, refresh);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Mode}({this},{flags},{width},{height},{refresh})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Mode", this, flags, width, height, refresh);
                     }
 
                     break;
@@ -267,7 +267,7 @@ namespace Wayland
                     if (this.done != null)
                     {
                         this.done.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Done}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Done", this);
                     }
 
                     break;
@@ -275,11 +275,11 @@ namespace Wayland
 
                 case EventOpcode.Scale:
                 {
-                    var factor = (int)arguments[0];
+                    var factor = arguments[0].i;
                     if (this.scale != null)
                     {
                         this.scale.Invoke(this, factor);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Scale}({this},{factor})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Scale", this, factor);
                     }
 
                     break;
@@ -287,11 +287,11 @@ namespace Wayland
 
                 case EventOpcode.Name:
                 {
-                    var name = (string)arguments[0];
+                    var name = arguments[0].s;
                     if (this.name != null)
                     {
                         this.name.Invoke(this, name);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Name}({this},{name})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Name", this, name);
                     }
 
                     break;
@@ -299,18 +299,18 @@ namespace Wayland
 
                 case EventOpcode.Description:
                 {
-                    var description = (string)arguments[0];
+                    var description = arguments[0].s;
                     if (this.description != null)
                     {
                         this.description.Invoke(this, description);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Description}({this},{description})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Description", this, description);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -331,7 +331,7 @@ namespace Wayland
                 case EventOpcode.Description:
                     return new WaylandType[]{WaylandType.String, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

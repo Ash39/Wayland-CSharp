@@ -33,7 +33,7 @@ namespace Wayland
     public partial class WlSubcompositor : WaylandObject
     {
         public const string INTERFACE = "wl_subcompositor";
-        public WlSubcompositor(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlSubcompositor(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -48,7 +48,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -79,12 +79,11 @@ namespace Wayland
         ///<param name = "parent"> the parent surface </param>
         public WlSubsurface GetSubsurface(WlSurface surface, WlSurface parent)
         {
-            uint id = connection.Create();
-            WlSubsurface wObject = new WlSubsurface(this.id, ref id, connection);
+            WlSubsurface wObject = connection.Create<WlSubsurface>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetSubsurface, id, surface.id, parent.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetSubsurface}({id},{surface.id},{parent.id})");
-            connection[id] = wObject;
-            return (WlSubsurface)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetSubsurface", id, surface.id, parent.id);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -97,12 +96,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -111,7 +110,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

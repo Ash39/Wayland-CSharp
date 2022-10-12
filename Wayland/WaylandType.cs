@@ -18,4 +18,14 @@ namespace Wayland
         Array,
         Handle
     }
+    
+    public struct WlType {
+        public int i;
+        public float f;
+        public IntPtr p;
+        public uint u;
+        public double d;
+        public byte[] b;
+        public string s;
+    }
 }

@@ -32,39 +32,34 @@ namespace Wayland.Sample
 
         private void globalCallback(WlRegistry registery, uint name, string wlinterface, uint version)
         {
-            if (wlinterface == WlCompositor.INTERFACE)
+            switch (wlinterface)
             {
-                compositor = registery.Bind<WlCompositor>(name, wlinterface, version);
-            }
-            else if (wlinterface == WlShm.INTERFACE)
-            {
-                wl_shm = registery.Bind<WlShm>(name, wlinterface, version);
-            }
-            else if (wlinterface == XdgWmBase.INTERFACE)
-            {
-                xdgWm = registery.Bind<XdgWmBase>(name, XdgWmBase.INTERFACE, version);
-            }
-            else if (wlinterface == ZwpLinuxDmabufV1.INTERFACE)
-            {
-                dmabuf = registery.Bind<ZwpLinuxDmabufV1>(name, ZwpLinuxDmabufV1.INTERFACE, version);
-                dmabuf.modifier += DmabufModifier;
-            }
-            else if (wlinterface == WlSeat.INTERFACE)
-            {
-                seat = registery.Bind<WlSeat>(name, WlSeat.INTERFACE, version);
-                input = new Input();
-                seat.capabilities += input.Create;
-                seat.name += SeatName;
-            }
-            else if (wlinterface == WlDrm.INTERFACE)
-            {
-                wl_drm = registery.Bind<WlDrm>(name, WlDrm.INTERFACE, version);
+                case WlCompositor.INTERFACE:
+                    compositor = registery.Bind<WlCompositor>(name, wlinterface, version);
+                    break;
+                case WlShm.INTERFACE:
+                    wl_shm = registery.Bind<WlShm>(name, wlinterface, version);
+                    break;
+                case XdgWmBase.INTERFACE:
+                    xdgWm = registery.Bind<XdgWmBase>(name, XdgWmBase.INTERFACE, version);
+                    break;
+                case ZwpLinuxDmabufV1.INTERFACE:
+                    dmabuf = registery.Bind<ZwpLinuxDmabufV1>(name, ZwpLinuxDmabufV1.INTERFACE, version);
+                    break;
+                case WlSeat.INTERFACE:
+                    seat = registery.Bind<WlSeat>(name, WlSeat.INTERFACE, version);
+                    input = new Input();
+                    seat.capabilities += input.Create;
+                    seat.name += SeatName;
+                    break;
+                case WlDrm.INTERFACE:
+                    wl_drm = registery.Bind<WlDrm>(name, WlDrm.INTERFACE, version);
+                    break;
             }
         }
 
         private void SeatName(WlSeat seat, string name)
         {
-            
         }
 
 
@@ -74,10 +69,8 @@ namespace Wayland.Sample
             //throw new NotImplementedException();
         }
 
-        private static void DmabufModifier(ZwpLinuxDmabufV1 zwpLinuxDmabuf, uint format, uint modifier_hi, uint modifier_lo)
-        {
-            ulong modifier = ((ulong) modifier_hi << 32 ) | modifier_lo;
-        }
-
+        public void Wait() => display.Wait();
+        
+        public int Release() => display.Release();
     }
 }

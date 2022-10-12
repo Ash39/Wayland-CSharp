@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wayland.Sample
@@ -13,14 +14,10 @@ namespace Wayland.Sample
         public Device device;
         public WlSurface surface;
         public XdgSurface xdgSurface;
-        public WlCallback frameCallback;
         public XdgToplevel xdgToplevel;
         public int width, height;
         public readonly List<Buffer> buffers = new List<Buffer>();
         IBackend backend;
-
-        public Action render;
-
 
         private void GetDevice()
         {
@@ -51,11 +48,9 @@ namespace Wayland.Sample
             surface = display.compositor.CreateSurface();
             xdgSurface = display.xdgWm.GetXdgSurface(surface);
             xdgSurface.configure += Configure;
-            XdgToplevel xdgToplevel = xdgSurface.GetToplevel();
+            xdgToplevel = xdgSurface.GetToplevel();
             xdgToplevel.SetTitle(title);
-            
 
-            
 
             switch(graphics)
             {
@@ -69,37 +64,26 @@ namespace Wayland.Sample
                     break;
             }
 
-            backend.render = render;
-
             backend.CreateDisplay(device);
 
             for(int i = 0; i < NUM_BUFFERS; i++ )
             {
-                buffers.Add(new Buffer());
-                buffers[i].CreateBuffer(device, display.dmabuf, width, height, DRMFormats.DRM_FORMAT_ARGB8888, ZwpLinuxBufferParamsV1.FlagsFlag.YInvert, DRMFormats.DRM_FORMAT_INVALID);
+                buffers.Add(new Buffer(device, display.dmabuf, width, height, DRMFormats.DRM_FORMAT_ARGB8888, ZwpLinuxBufferParamsV1.FlagsFlag.YInvert, DRMFormats.DRM_FORMAT_INVALID));
                 backend.BindBuffer(buffers[i]);
             }
 
             backend.Complete(this);
-
-            surface.Commit();
-
-            display.display.Roundtrip();
-
-            backend.Present(this);
-
-            while (display.display.Dispatch())
-            {
-                
-            }
+            display.display.Dispatch();
         }
+
+        public bool PollEvents() => display.display.Dispatch(0);
+        public void Present() => backend.Present(this);
 
         private void Configure(XdgSurface xdgSurface, uint serial)
         {
             xdgSurface.AckConfigure(serial);
-
-            backend.Present(this);
-
+            surface.Commit();
+            backend.ForceFrame();
         }
         
         

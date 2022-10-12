@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlBuffer : WaylandObject
     {
         public const string INTERFACE = "wl_buffer";
-        public WlBuffer(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlBuffer(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -39,7 +39,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         public enum RequestOpcode : ushort
@@ -71,7 +71,7 @@ namespace Wayland
             Release
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
@@ -80,14 +80,14 @@ namespace Wayland
                     if (this.release != null)
                     {
                         this.release.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Release}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Release");
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -98,7 +98,7 @@ namespace Wayland
                 case EventOpcode.Release:
                     return new WaylandType[]{};
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

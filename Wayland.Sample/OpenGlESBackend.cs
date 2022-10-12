@@ -13,14 +13,16 @@ namespace Wayland.Sample
         private IntPtr eglDisplay;
         private IntPtr context;
 
-        public Action render { get; set; }
-
         private bool isInitated;
+        private Buffer buffer;
+        private bool frameComplete;
+        private WlCallback frameCallback;
+
 
         public void BindBuffer(Buffer buffer)
         {
             int general_attribs = 3;
-            int plane_attribs = 5;
+            int plane_attribs = 3;
             int entries_per_attrib = 2;
             int[] attribs = new int[(general_attribs + plane_attribs) *
                     entries_per_attrib + 1];
@@ -39,14 +41,13 @@ namespace Wayland.Sample
             attribs[atti++] = Egl.DMA_BUF_PLANE0_PITCH_EXT;
             attribs[atti++] = (int)buffer.stride;
             /* TODO: Update for dmabuf import modifiers */
-            attribs[atti] = Egl.NONE;
+            attribs[atti++] = Egl.NONE;
 
             buffer.image = CreateImageKHR(eglDisplay, IntPtr.Zero, Egl.LINUX_DMA_BUF_EXT, IntPtr.Zero, attribs);
 
             Egl.MakeCurrent(eglDisplay, (IntPtr)Egl.NO_SURFACE, (IntPtr)Egl.NO_SURFACE, context);
-            int error = Egl.GetError();
+            
             buffer.glTexture = Gl.GenTexture();
-            error = Egl.GetError();
             Gl.BindTexture(TextureTarget.Texture2d, buffer.glTexture);
             Gl.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureWrapS, Gl.CLAMP_TO_EDGE);
             Gl.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureWrapT, Gl.CLAMP_TO_EDGE);
@@ -54,6 +55,7 @@ namespace Wayland.Sample
             Gl.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, Gl.LINEAR);
 
             EGLImageTargetTexture2DOES((int)TextureTarget.Texture2d, buffer.image);
+            int code = Egl.GetError();
             buffer.glFBO = Gl.GenFramebuffer();
             Gl.BindFramebuffer(FramebufferTarget.Framebuffer, buffer.glFBO);
             Gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d,buffer.glTexture, 0);
@@ -86,12 +88,12 @@ namespace Wayland.Sample
             int error = Egl.GetError();
 
             int[] config_attribs = {
-                Egl.SURFACE_TYPE,Egl.WINDOW_BIT,
+                Egl.SURFACE_TYPE, Egl.WINDOW_BIT,
                 Egl.RED_SIZE, 1,
                 Egl.GREEN_SIZE, 1,
                 Egl.BLUE_SIZE, 1,
                 Egl.ALPHA_SIZE, 1,
-                Egl.RENDERABLE_TYPE,(int)Egl.OPENGL_ES3_BIT,
+                Egl.RENDERABLE_TYPE, (int)Egl.OPENGL_ES3_BIT,
                 Egl.NONE,
             };
 
@@ -108,58 +110,67 @@ namespace Wayland.Sample
             };
 
             context = Egl.CreateContext(eglDisplay, configs[0], IntPtr.Zero, context_attribs);
-            
         }
 
         public void Complete(Window window)
         {
             Egl.SwapInterval(eglDisplay, 0);
             Egl.MakeCurrent(eglDisplay, (IntPtr)Egl.NO_SURFACE, (IntPtr)Egl.NO_SURFACE, context);
+            NextBuffer(window);
             isInitated = true;
+            frameComplete = true;
         }
-        
+
+        public void ForceFrame()
+        {
+            frameComplete = true;
+        }
+
         public void Present(Window window)
         {
             if(!isInitated)
                 return;
 
-            Buffer buffer = NextBuffer(window);
+            // while (!frameComplete)
+            // {
+            //     window.display.display.Dispatch(0);
+            // }
 
-            if(buffer == null)
-                return;
-
-            Gl.BindFramebuffer(FramebufferTarget.Framebuffer, buffer.glFBO);
-
-            render?.Invoke();
-
+            //window.display.Wait();
+            window.surface.Frame();
+            // frameComplete = false;
+            // frameCallback.done += (callback,data) =>
+            // {
+            //     frameComplete = true;
+            // };
+            
             window.surface.Attach(buffer.buffer,0,0);
             window.surface.DamageBuffer(0,0, int.MaxValue, int.MaxValue);
-            window.frameCallback = window.surface.Frame();
-            window.frameCallback.done += (callback, time) => 
-            {
-                Present(window);
-            };
             window.surface.Commit();
-                    
+            //window.display.Release();
+            NextBuffer(window);
+
+            if(buffer == null)
+            {
+                return;
+            }
+            Gl.BindFramebuffer(FramebufferTarget.Framebuffer, buffer.glFBO);
             
         }
 
-        public Buffer NextBuffer(Window window)
+        public void NextBuffer(Window window)
         {
-            //return window.buffers[0];
             for(int i = 0; i < window.buffers.Count; i++)
             {
-                Buffer buffer = window.buffers[i];
+                buffer = window.buffers[i];
                 if(!buffer.isBusy)
                 {
                     buffer.isBusy = true;
-                    return buffer;
+                    return;
                 }
             }
-            return null;
+            //buffer = null;
         }
-
-
 
         [DllImport("libEGL.so", EntryPoint = "eglGetProcAddress")]
 		private static extern IntPtr GetProcAddressCore(string funcname);

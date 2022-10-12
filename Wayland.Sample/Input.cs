@@ -19,7 +19,7 @@ namespace Wayland.Sample
 
         public void Create(WlSeat seat, WlSeat.CapabilityFlag capabilities)
         {
-            if((capabilities.HasFlag(WlSeat.CapabilityFlag.Pointer)) && mouse.Equals(default))
+            if((capabilities.HasFlag(WlSeat.CapabilityFlag.Pointer)) && mouse == null)
             {
                 mouse = seat.GetPointer();
                 mouse.enter += (_,_,_,_,_) => focus?.Invoke(true);
@@ -30,7 +30,7 @@ namespace Wayland.Sample
 
             }
 
-            if((capabilities.HasFlag(WlSeat.CapabilityFlag.Keyboard)) && keyboard.Equals(default))
+            if((capabilities.HasFlag(WlSeat.CapabilityFlag.Keyboard)) && keyboard == null)
             {
                 keyboard = seat.GetKeyboard();
                 

@@ -16,7 +16,7 @@ namespace Wayland
     public partial class WlRegion : WaylandObject
     {
         public const string INTERFACE = "wl_region";
-        public WlRegion(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlRegion(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -29,7 +29,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -45,7 +45,7 @@ namespace Wayland
         public void Add(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Add, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Add}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Add", x, y, width, height);
         }
 
         ///<Summary>
@@ -61,7 +61,7 @@ namespace Wayland
         public void Subtract(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Subtract, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Subtract}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Subtract", x, y, width, height);
         }
 
         public enum RequestOpcode : ushort
@@ -75,12 +75,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -89,7 +89,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

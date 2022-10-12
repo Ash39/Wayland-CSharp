@@ -20,7 +20,7 @@ namespace Wayland
     public partial class WlTouch : WaylandObject
     {
         public const string INTERFACE = "wl_touch";
-        public WlTouch(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
+        public WlTouch(uint id, WaylandConnection connection, uint version = 8) : base(id, version, connection)
         {
         }
 
@@ -30,7 +30,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -170,22 +170,22 @@ namespace Wayland
             Orientation
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Down:
                 {
-                    var serial = (uint)arguments[0];
-                    var time = (uint)arguments[1];
-                    var surface = connection[(uint)arguments[2]];
-                    var id = (int)arguments[3];
-                    var x = (double)arguments[4];
-                    var y = (double)arguments[5];
+                    var serial = arguments[0].u;
+                    var time = arguments[1].u;
+                    var surface = connection[arguments[2].u];
+                    var id = arguments[3].i;
+                    var x = arguments[4].d;
+                    var y = arguments[5].d;
                     if (this.down != null)
                     {
                         this.down.Invoke(this, serial, time, surface, id, x, y);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Down}({this},{serial},{time},{surface},{id},{x},{y})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Down");
                     }
 
                     break;
@@ -193,13 +193,13 @@ namespace Wayland
 
                 case EventOpcode.Up:
                 {
-                    var serial = (uint)arguments[0];
-                    var time = (uint)arguments[1];
-                    var id = (int)arguments[2];
+                    var serial = arguments[0].u;
+                    var time = arguments[1].u;
+                    var id = arguments[2].i;
                     if (this.up != null)
                     {
                         this.up.Invoke(this, serial, time, id);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Up}({this},{serial},{time},{id})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Up", this, serial, time, id);
                     }
 
                     break;
@@ -207,14 +207,14 @@ namespace Wayland
 
                 case EventOpcode.Motion:
                 {
-                    var time = (uint)arguments[0];
-                    var id = (int)arguments[1];
-                    var x = (double)arguments[2];
-                    var y = (double)arguments[3];
+                    var time = arguments[0].u;
+                    var id = arguments[1].i;
+                    var x = arguments[2].d;
+                    var y = arguments[3].d;
                     if (this.motion != null)
                     {
                         this.motion.Invoke(this, time, id, x, y);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Motion}({this},{time},{id},{x},{y})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Motion", this, time, id, x, y);
                     }
 
                     break;
@@ -225,7 +225,7 @@ namespace Wayland
                     if (this.frame != null)
                     {
                         this.frame.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Frame}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Frame", this);
                     }
 
                     break;
@@ -236,7 +236,7 @@ namespace Wayland
                     if (this.cancel != null)
                     {
                         this.cancel.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Cancel}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Cancel", this);
                     }
 
                     break;
@@ -244,13 +244,13 @@ namespace Wayland
 
                 case EventOpcode.Shape:
                 {
-                    var id = (int)arguments[0];
-                    var major = (double)arguments[1];
-                    var minor = (double)arguments[2];
+                    var id = arguments[0].i;
+                    var major = arguments[1].d;
+                    var minor = arguments[2].d;
                     if (this.shape != null)
                     {
                         this.shape.Invoke(this, id, major, minor);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Shape}({this},{id},{major},{minor})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Shape", this, id, major, minor);
                     }
 
                     break;
@@ -258,19 +258,19 @@ namespace Wayland
 
                 case EventOpcode.Orientation:
                 {
-                    var id = (int)arguments[0];
-                    var orientation = (double)arguments[1];
+                    var id = arguments[0].i;
+                    var orientation = arguments[1].d;
                     if (this.orientation != null)
                     {
                         this.orientation.Invoke(this, id, orientation);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Orientation}({this},{id},{orientation})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Orientation", this, id, orientation);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -293,7 +293,7 @@ namespace Wayland
                 case EventOpcode.Orientation:
                     return new WaylandType[]{WaylandType.Int, WaylandType.Fixed, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

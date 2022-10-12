@@ -33,7 +33,7 @@ namespace Wayland
     public partial class WlRegistry : WaylandObject
     {
         public const string INTERFACE = "wl_registry";
-        public WlRegistry(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlRegistry(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -49,13 +49,11 @@ namespace Wayland
         public T Bind<T>(uint name, string @interface, uint version)
             where T : WaylandObject
         {
-            uint id = connection.Create();
-            WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, id, connection, version);
-            id = wObject.id;
+            WaylandObject wObject = (WaylandObject)connection.Create<T>(0, version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.Bind, name, @interface, version, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Bind}({name},{@interface},{version},{id})");
-            connection[id] = wObject;
-            return (T)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Bind", name, @interface, version, id);
+            return (T)wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -99,19 +97,19 @@ namespace Wayland
             GlobalRemove
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Global:
                 {
-                    var name = (uint)arguments[0];
-                    var @interface = (string)arguments[1];
-                    var version = (uint)arguments[2];
+                    var name = arguments[0].u;
+                    var @interface = arguments[1].s;
+                    var version = arguments[2].u;
                     if (this.global != null)
                     {
                         this.global.Invoke(this, name, @interface, version);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Global}({this},{name},{@interface},{version})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Global");
                     }
 
                     break;
@@ -119,18 +117,18 @@ namespace Wayland
 
                 case EventOpcode.GlobalRemove:
                 {
-                    var name = (uint)arguments[0];
+                    var name = arguments[0].u;
                     if (this.globalRemove != null)
                     {
                         this.globalRemove.Invoke(this, name);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.GlobalRemove}({this},{name})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "GlobalRemove", this, name);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -143,7 +141,7 @@ namespace Wayland
                 case EventOpcode.GlobalRemove:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

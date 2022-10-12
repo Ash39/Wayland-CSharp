@@ -20,7 +20,7 @@ namespace Wayland
     public partial class WlPointer : WaylandObject
     {
         public const string INTERFACE = "wl_pointer";
-        public WlPointer(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
+        public WlPointer(uint id, WaylandConnection connection, uint version = 8) : base(id, version, connection)
         {
         }
 
@@ -77,7 +77,7 @@ namespace Wayland
         public void SetCursor(uint serial, WlSurface surface, int hotspot_x, int hotspot_y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetCursor, serial, surface.id, hotspot_x, hotspot_y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetCursor}({serial},{surface.id},{hotspot_x},{hotspot_y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetCursor", serial, surface.id, hotspot_x, hotspot_y);
         }
 
         ///<Summary>
@@ -94,7 +94,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -378,20 +378,20 @@ namespace Wayland
             AxisValue120
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Enter:
                 {
-                    var serial = (uint)arguments[0];
-                    var surface = connection[(uint)arguments[1]];
-                    var surfaceX = (double)arguments[2];
-                    var surfaceY = (double)arguments[3];
+                    var serial = arguments[0].u;
+                    var surface = connection[arguments[1].u];
+                    var surfaceX = arguments[2].d;
+                    var surfaceY = arguments[3].d;
                     if (this.enter != null)
                     {
                         this.enter.Invoke(this, serial, surface, surfaceX, surfaceY);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Enter}({this},{serial},{surface},{surfaceX},{surfaceY})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Enter");
                     }
 
                     break;
@@ -399,12 +399,12 @@ namespace Wayland
 
                 case EventOpcode.Leave:
                 {
-                    var serial = (uint)arguments[0];
-                    var surface = connection[(uint)arguments[1]];
+                    var serial = arguments[0].u;
+                    var surface = connection[arguments[1].u];
                     if (this.leave != null)
                     {
                         this.leave.Invoke(this, serial, surface);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Leave}({this},{serial},{surface})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Leave", this, serial, surface);
                     }
 
                     break;
@@ -412,13 +412,13 @@ namespace Wayland
 
                 case EventOpcode.Motion:
                 {
-                    var time = (uint)arguments[0];
-                    var surfaceX = (double)arguments[1];
-                    var surfaceY = (double)arguments[2];
+                    var time = arguments[0].u;
+                    var surfaceX = arguments[1].d;
+                    var surfaceY = arguments[2].d;
                     if (this.motion != null)
                     {
                         this.motion.Invoke(this, time, surfaceX, surfaceY);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Motion}({this},{time},{surfaceX},{surfaceY})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Motion", this, time, surfaceX, surfaceY);
                     }
 
                     break;
@@ -426,14 +426,14 @@ namespace Wayland
 
                 case EventOpcode.Button:
                 {
-                    var serial = (uint)arguments[0];
-                    var time = (uint)arguments[1];
-                    var button = (uint)arguments[2];
-                    var state = (ButtonStateFlag)arguments[3];
+                    var serial = arguments[0].u;
+                    var time = arguments[1].u;
+                    var button = arguments[2].u;
+                    var state = (ButtonStateFlag)arguments[3].u;
                     if (this.button != null)
                     {
                         this.button.Invoke(this, serial, time, button, state);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Button}({this},{serial},{time},{button},{state})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Button", this, serial, time, button, state);
                     }
 
                     break;
@@ -441,13 +441,13 @@ namespace Wayland
 
                 case EventOpcode.Axis:
                 {
-                    var time = (uint)arguments[0];
-                    var axis = (AxisFlag)arguments[1];
-                    var value = (double)arguments[2];
+                    var time = arguments[0].u;
+                    var axis = (AxisFlag)arguments[1].u;
+                    var value = arguments[2].d;
                     if (this.axis != null)
                     {
                         this.axis.Invoke(this, time, axis, value);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Axis}({this},{time},{axis},{value})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Axis", this, time, axis, value);
                     }
 
                     break;
@@ -458,7 +458,7 @@ namespace Wayland
                     if (this.frame != null)
                     {
                         this.frame.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Frame}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Frame", this);
                     }
 
                     break;
@@ -466,11 +466,11 @@ namespace Wayland
 
                 case EventOpcode.AxisSource:
                 {
-                    var axisSource = (AxisSourceFlag)arguments[0];
+                    var axisSource = (AxisSourceFlag)arguments[0].u;
                     if (this.axisSource != null)
                     {
                         this.axisSource.Invoke(this, axisSource);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.AxisSource}({this},{axisSource})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "AxisSource", this, axisSource);
                     }
 
                     break;
@@ -478,12 +478,12 @@ namespace Wayland
 
                 case EventOpcode.AxisStop:
                 {
-                    var time = (uint)arguments[0];
-                    var axis = (AxisFlag)arguments[1];
+                    var time = arguments[0].u;
+                    var axis = (AxisFlag)arguments[1].u;
                     if (this.axisStop != null)
                     {
                         this.axisStop.Invoke(this, time, axis);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.AxisStop}({this},{time},{axis})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "AxisStop", this, time, axis);
                     }
 
                     break;
@@ -491,12 +491,12 @@ namespace Wayland
 
                 case EventOpcode.AxisDiscrete:
                 {
-                    var axis = (AxisFlag)arguments[0];
-                    var discrete = (int)arguments[1];
+                    var axis = (AxisFlag)arguments[0].u;
+                    var discrete = arguments[1].i;
                     if (this.axisDiscrete != null)
                     {
                         this.axisDiscrete.Invoke(this, axis, discrete);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.AxisDiscrete}({this},{axis},{discrete})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "AxisDiscrete", this, axis, discrete);
                     }
 
                     break;
@@ -504,19 +504,19 @@ namespace Wayland
 
                 case EventOpcode.AxisValue120:
                 {
-                    var axis = (AxisFlag)arguments[0];
-                    var value120 = (int)arguments[1];
+                    var axis = (AxisFlag)arguments[0].u;
+                    var value120 = arguments[1].i;
                     if (this.axisValue120 != null)
                     {
                         this.axisValue120.Invoke(this, axis, value120);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.AxisValue120}({this},{axis},{value120})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "AxisValue120", this, axis, value120);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -545,7 +545,7 @@ namespace Wayland
                 case EventOpcode.AxisValue120:
                     return new WaylandType[]{WaylandType.Uint, WaylandType.Int, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

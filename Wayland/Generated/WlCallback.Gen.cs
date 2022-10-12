@@ -13,7 +13,7 @@ namespace Wayland
     public partial class WlCallback : WaylandObject
     {
         public const string INTERFACE = "wl_callback";
-        public WlCallback(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlCallback(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -33,24 +33,24 @@ namespace Wayland
             Done
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Done:
                 {
-                    var callbackData = (uint)arguments[0];
+                    var callbackData = arguments[0].u;
                     if (this.done != null)
                     {
                         this.done.Invoke(this, callbackData);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Done}({this},{callbackData})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Done");
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -61,7 +61,7 @@ namespace Wayland
                 case EventOpcode.Done:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

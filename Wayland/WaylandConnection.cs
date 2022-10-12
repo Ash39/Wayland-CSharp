@@ -1,126 +1,117 @@
-﻿using Mono.Unix.Native;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Wayland
 {
     public class WaylandConnection
     {
-        private WaylandSocket socket;
-        private Queue<uint> freeIds;
-        private Queue<Action> events = new Queue<Action>();
-        private List<WaylandObject> objects;
-        private List<WaylandObject> serverObjects;
+        private readonly WaylandSocket _socket;
+        private readonly Queue<uint> _freeIds;
+        private readonly ConcurrentQueue<Action> _events;
+        private readonly List<WaylandObject> _objects;
+        private readonly List<WaylandObject> _serverObjects;
+
+        private readonly List<WaylandObject> _recycledObjects;
 
 
         private const uint ClientRangeBegin = 0x00000001;
         private const uint ClientRangeEnd = 0xFEFFFFFF;
         private const uint ServerRangeBegin = 0xff000000;
         private const uint ServerRangeEnd = 0xffffffff;
+        private readonly uint _beginRange;
+        private readonly uint _endRange;
 
-        public Func<uint, (IntPtr handle, uint id, uint version)> GetHandle;
-        private Action<IntPtr> DeleteHandle; 
+        internal int Position => _socket.position;
 
-        private uint beginRange;
-        private uint endRange;
-
-        internal int position => socket.position;
-
-        public Queue<Action> Events { get => events;}
+        public ConcurrentQueue<Action> Events { get => _events;}
 
         public WaylandConnection(string socket,bool client = true)
         {
-            this.socket = new WaylandSocket(socket);
-            this.GetHandle = (factoryId) => { return (IntPtr.Zero, 0, 0); };
-            this.DeleteHandle = null;
+            this._socket = new WaylandSocket(socket);
             if (client) 
             {
-                beginRange = ClientRangeBegin;
-                endRange = ClientRangeEnd;
+                _beginRange = ClientRangeBegin;
+                _endRange = ClientRangeEnd;
             }
             else
             {
-                beginRange = ServerRangeBegin;
-                endRange = ServerRangeEnd;
+                _beginRange = ServerRangeBegin;
+                _endRange = ServerRangeEnd;
             }
 
-            objects = new List<WaylandObject>();
-            freeIds = new Queue<uint>();
+            _objects = new List<WaylandObject>();
+            _freeIds = new Queue<uint>();
+            _events = new ConcurrentQueue<Action>();
 
-            serverObjects = new List<WaylandObject>();
+            _serverObjects = new List<WaylandObject>();
+            _recycledObjects = new List<WaylandObject>();
         }
 
-        public uint Create() 
+        private void Create(ref uint id) 
         {
-            if (DeleteHandle == null) 
+            if(id < ClientRangeEnd)
             {
-                if (freeIds.Count > 0)
+                if (_freeIds.Count > 0)
                 {
-                    return freeIds.Dequeue();
+                    id = _freeIds.Dequeue();
                 }
                 else
                 {
-                    uint id = ((uint)objects.Count) + ClientRangeBegin;
-                    if (id >= beginRange && id <= endRange)
+                    id = ((uint)_objects.Count) + ClientRangeBegin;
+                    if (id >= _beginRange && id <= _endRange)
                     {
-                        objects.Add(null);
-                        return id;
+                        _objects.Add(null);
                     }
                     else
                         throw new IndexOutOfRangeException();
                 }
-                
-            }
-            else
+            }else
             {
-                return 0;
+                _serverObjects.Add(null);
             }
+            
             
         }
 
-        public void ServerObjectAdd(WaylandObject @object) 
+        public T Create<T>(uint id, uint version) where T : WaylandObject
         {
-            if (@object.id >= ServerRangeBegin && @object.id <= ServerRangeEnd)
+            Create(ref id);
+                
+            T @object = (T)_recycledObjects.FirstOrDefault(c => c.GetType() == typeof(T));
+            if(@object != null)
             {
-                serverObjects.Add(@object);
+                @object.id = id;
+                _recycledObjects.Remove(@object);
             }
             else
-                throw new IndexOutOfRangeException();
+                @object = (T)Activator.CreateInstance(typeof(T), id, this, version);
+
+            this[id] = @object;
+            return @object;
         }
 
-
-        public void Get(uint id) 
+        internal int Flush(int timeout)
         {
-            if (id >= beginRange && id <= endRange)
-            {
-                objects.Add(null);
-            }
-            else
-                throw new IndexOutOfRangeException();
-        }
-
-        internal int Flush()
-        {
-            return socket.Flush();
+            return _socket.Flush(timeout);
         }
 
         public void Destroy(uint id) 
         {
-            if (id >= beginRange && id <= endRange)
+            if (id >= _beginRange && id <= _endRange)
             {
-                DeleteHandle?.Invoke(this[id].handle);
-                freeIds.Enqueue(id);
+                _freeIds.Enqueue(id);
+                WaylandObject @object = _objects.Single(c => {if(c != null) return c.id == id; return false;});
                 this[id] = null;
+                _recycledObjects.Add(@object);
             }
-            else if (id >= ServerRangeBegin && id <= ServerRangeEnd)
+            else if (id >= ServerRangeBegin)
             {
-                DeleteHandle?.Invoke(this[id].handle);
-                serverObjects.Remove(serverObjects.Single(c => c.id == id));
+                WaylandObject @object = _serverObjects.Single(c => {if(c != null) return c.id == id; return false;});
+                _serverObjects.Remove(@object);
+                _recycledObjects.Add(@object);
             }
             else
                 throw new IndexOutOfRangeException();
@@ -130,19 +121,19 @@ namespace Wayland
         {
             get
             {
-                if (id >= beginRange && id <= endRange)
-                    return objects[(int)(id - beginRange)];
-                else if(id >= ServerRangeBegin && id <= ServerRangeEnd)
-                    return serverObjects[(int)(id - ServerRangeBegin)];
+                if (id >= _beginRange && id <= _endRange)
+                    return _objects[(int)(id - _beginRange)];
+                else if(id >= ServerRangeBegin)
+                    return _serverObjects[(int)(id - ServerRangeBegin)];
                 else
                     return null;
             }
-            set
+            private set
             {
-                if (id >= beginRange && id <= endRange)
-                    objects[(int)(id - beginRange)] = value;
-                else if(id >= ServerRangeBegin && id <= ServerRangeEnd)
-                    serverObjects[(int)(id - ServerRangeBegin)] = value;
+                if (id >= _beginRange && id <= _endRange)
+                    _objects[(int)(id - _beginRange)] = value;
+                else if(id >= ServerRangeBegin)
+                    _serverObjects[(int)(id - ServerRangeBegin)] = value;
                 else
                     throw new IndexOutOfRangeException();
             }
@@ -151,7 +142,6 @@ namespace Wayland
 
         public void Marshal(uint id, ushort opcode, params object[] arguments)
         {
-           
             ushort size = 8;
             foreach (object argument in arguments)
             {
@@ -166,61 +156,56 @@ namespace Wayland
                         break;
                     case string s:
                         size += 4;
-                        if (s != null)
-                            size += (ushort)((Encoding.UTF8.GetByteCount(s) + 4) / 4 * 4);
+                        size += (ushort)((Encoding.UTF8.GetByteCount(s) + 4) / 4 * 4);
                         break;
                     case byte[] a:
                         size += 4;
-                        if (a != null)
-                            size += (ushort)((a.Length + 3) / 4 * 4);
+                        size += (ushort)((a.Length + 3) / 4 * 4);
                         break;
                     case IntPtr h:
                         break;
                 }
             }
-            socket.Write(id);
-            socket.Write(((uint)size << 16) | (uint)opcode);
+            _socket.Write(id);
+            _socket.Write(((uint)size << 16) | (uint)opcode);
             foreach (object argument in arguments)
             {
                 switch (argument)
                 {
                     case int i:
-                        socket.Write(i);
+                        _socket.Write(i);
                         break;
                     case uint u:
-                        socket.Write(u);
+                        _socket.Write(u);
                         break;
                     case double d:
-                        socket.Write(d);
+                        _socket.Write(d);
                         break;
                     case string s:
-                        socket.Write(s);
+                        _socket.Write(s);
                         break;
                     case byte[] a:
-                        socket.Write(a);
+                        _socket.Write(a);
                         break;
                     case IntPtr h:
-                        socket.Write(h);
+                        _socket.Write(h);
                         break;
                 }
             }
-
-
             //mutex.ReleaseMutex();
         }
 
         public bool Read() 
         {
-        
-            var header = socket.ReadHeader();
+            var (id, opCode, _) = _socket.ReadHeader();
 
 
-            if(objects.ElementAtOrDefault((int)(header.id - beginRange)) == null && serverObjects.ElementAtOrDefault((int)(header.id - ServerRangeBegin)) == null)
+            if(_objects.ElementAtOrDefault((int)(id - _beginRange)) == null && _serverObjects.ElementAtOrDefault((int)(id - ServerRangeBegin)) == null)
                 return false;
 
-            WaylandType[] types = this[header.id].WaylandTypes(header.opCode);
+            WaylandType[] types = this[id].WaylandTypes(opCode);
 
-            object[] args = new object[types.Length];
+            WlType[] args = new WlType[types.Length];
             int i = 0;
 
             foreach (WaylandType type in types)
@@ -228,37 +213,37 @@ namespace Wayland
                 switch (type)
                 {
                     case WaylandType.Fd:
-                        args[i] = socket.ReadFd();
+                        args[i].p = _socket.ReadFd();
                         break;
                     case WaylandType.Int:
-                        args[i] = socket.ReadInt();
+                        args[i].i = _socket.ReadInt();
                         break;
                     case WaylandType.Uint:
-                        args[i] = socket.ReadUInt();
+                        args[i].u = _socket.ReadUInt();
                         break;
                     case WaylandType.Fixed:
-                        args[i] = socket.ReadDouble();
+                        args[i].d = _socket.ReadDouble();
                         break;
                     case WaylandType.Object:
-                        args[i] = socket.ReadUInt();
+                        args[i].u = _socket.ReadUInt();
                         break;
                     case WaylandType.NewId:
-                        args[i] = socket.ReadUInt();
+                        args[i].u = _socket.ReadUInt();
                         break;
                     case WaylandType.String:
-                        args[i] = socket.ReadString();
+                        args[i].s = _socket.ReadString();
                         break;
                     case WaylandType.Array:
-                        args[i] = socket.ReadBytes();
+                        args[i].b = _socket.ReadBytes();
                         break;
                     case WaylandType.Handle:
-                        args[i] = socket.ReadFd();
+                        args[i].p = _socket.ReadFd();
                         break;
                 }
                 i++;
             }
 
-            events.Enqueue(() => this[header.id].Event(header.opCode, args));
+            _events.Enqueue(() => this[id].Event(opCode, args));
 
             return true;
             //mutex.WaitOne();
@@ -268,8 +253,12 @@ namespace Wayland
 
         public void Disconnect()
         {
-            socket.Dispose();
-            freeIds.Clear();
+            _socket.Dispose();
+            _freeIds.Clear();
         }
+
+        public void Wait() => _socket.writeSemaphore.Wait();
+
+        public int Release() => _socket.writeSemaphore.Release();
     }
 }

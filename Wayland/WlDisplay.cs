@@ -16,11 +16,9 @@ namespace Wayland
 
             WaylandConnection connection = ConnectSocket(displayPath);
 
-            uint id = connection.Create();
-            WlDisplay display = new WlDisplay(0,ref id, connection);
+            WlDisplay display = connection.Create<WlDisplay>(0, 1);
             display.error += Error;
             display.deleteId += Delete;
-            connection[id] = display;
 
             return display;
         }
@@ -53,28 +51,40 @@ namespace Wayland
 
         private static void Error(WlDisplay wlDisplay,WaylandObject @object, uint code, string message)
         {
-            throw new Exception($"Error {code} object {@object.id}: {message}");
+            if(code == 0)
+                return;
+            throw new Exception($"Error {code}: {message}");
         }
 
-        public bool Dispatch() 
+        public bool Dispatch(int timeout = -1)
         {
-            int length = connection.Flush();
+            DispatchQueue(timeout);
+            return DispatchPending();
+        }
 
-            while(length > connection.position)
+
+        public bool DispatchQueue(int timeout = -1)
+        {
+            int length = connection.Flush(timeout);
+
+            while(length > connection.Position)
             {
                 if (!connection.Read())
                     break;
             }
-            return DispatchPending();
+            return connection.Events.Count != 0;
         }
-        
+
         public bool DispatchPending() 
         {
             if(connection.Events.Count == 0) return false;
 
             while (connection.Events.Count > 0)
             {
-                connection.Events.Dequeue().Invoke();
+                if (connection.Events.TryDequeue(out Action @event))
+                {
+                    @event.Invoke();
+                }
             }
             return true;
         }
@@ -96,5 +106,9 @@ namespace Wayland
 
             
         }
+
+        public void Wait() => connection.Wait();
+
+        public int Release() => connection.Release();
     }
 }

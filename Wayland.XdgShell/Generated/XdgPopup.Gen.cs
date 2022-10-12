@@ -41,7 +41,7 @@ namespace Wayland
     public partial class XdgPopup : WaylandObject
     {
         public const string INTERFACE = "xdg_popup";
-        public XdgPopup(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public XdgPopup(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -59,7 +59,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -117,7 +117,7 @@ namespace Wayland
         public void Grab(WlSeat seat, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Grab, seat.id, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Grab}({seat.id},{serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Grab", seat.id, serial);
         }
 
         ///<Summary>
@@ -157,7 +157,7 @@ namespace Wayland
         public void Reposition(XdgPositioner positioner, uint token)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Reposition, positioner.id, token);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Reposition}({positioner.id},{token})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Reposition", positioner.id, token);
         }
 
         public enum RequestOpcode : ushort
@@ -227,20 +227,20 @@ namespace Wayland
             Repositioned
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Configure:
                 {
-                    var x = (int)arguments[0];
-                    var y = (int)arguments[1];
-                    var width = (int)arguments[2];
-                    var height = (int)arguments[3];
+                    var x = arguments[0].i;
+                    var y = arguments[1].i;
+                    var width = arguments[2].i;
+                    var height = arguments[3].i;
                     if (this.configure != null)
                     {
                         this.configure.Invoke(this, x, y, width, height);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Configure}({this},{x},{y},{width},{height})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Configure");
                     }
 
                     break;
@@ -251,7 +251,7 @@ namespace Wayland
                     if (this.popupDone != null)
                     {
                         this.popupDone.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.PopupDone}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "PopupDone", this);
                     }
 
                     break;
@@ -259,18 +259,18 @@ namespace Wayland
 
                 case EventOpcode.Repositioned:
                 {
-                    var token = (uint)arguments[0];
+                    var token = arguments[0].u;
                     if (this.repositioned != null)
                     {
                         this.repositioned.Invoke(this, token);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Repositioned}({this},{token})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Repositioned", this, token);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -285,7 +285,7 @@ namespace Wayland
                 case EventOpcode.Repositioned:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

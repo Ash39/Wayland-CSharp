@@ -18,7 +18,7 @@ namespace Wayland
     public partial class WlShmPool : WaylandObject
     {
         public const string INTERFACE = "wl_shm_pool";
-        public WlShmPool(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlShmPool(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -48,12 +48,11 @@ namespace Wayland
         ///<param name = "format"> buffer pixel format </param>
         public WlBuffer CreateBuffer(int offset, int width, int height, int stride, WlShm.FormatFlag format)
         {
-            uint id = connection.Create();
-            WlBuffer wObject = new WlBuffer(this.id, ref id, connection);
+            WlBuffer wObject = connection.Create<WlBuffer>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateBuffer, id, offset, width, height, stride, (uint)format);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateBuffer}({id},{offset},{width},{height},{stride},{(uint)format})");
-            connection[id] = wObject;
-            return (WlBuffer)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateBuffer", id, offset, width, height, stride, (uint)format);
+            return wObject;
         }
 
         ///<Summary>
@@ -70,7 +69,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -93,7 +92,7 @@ namespace Wayland
         public void Resize(int size)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Resize, size);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Resize}({size})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Resize", size);
         }
 
         public enum RequestOpcode : ushort
@@ -107,12 +106,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -121,7 +120,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

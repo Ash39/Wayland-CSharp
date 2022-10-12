@@ -6,7 +6,7 @@ namespace Wayland
     public partial class WlDrm : WaylandObject
     {
         public const string INTERFACE = "wl_drm";
-        public WlDrm(uint factoryId, ref uint id, WaylandConnection connection, uint version = 2) : base(factoryId, ref id, version, connection)
+        public WlDrm(uint id, WaylandConnection connection, uint version = 2) : base(id, version, connection)
         {
         }
 
@@ -14,7 +14,7 @@ namespace Wayland
         public void Authenticate(uint id)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Authenticate, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Authenticate}({id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Authenticate", id);
         }
 
         ///<returns>  </returns>
@@ -25,12 +25,11 @@ namespace Wayland
         ///<param name = "format">  </param>
         public WlBuffer CreateBuffer(uint name, int width, int height, uint stride, uint format)
         {
-            uint id = connection.Create();
-            WlBuffer wObject = new WlBuffer(this.id, ref id, connection);
+            WlBuffer wObject = connection.Create<WlBuffer>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateBuffer, id, name, width, height, stride, format);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateBuffer}({id},{name},{width},{height},{stride},{format})");
-            connection[id] = wObject;
-            return (WlBuffer)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateBuffer", id, name, width, height, stride, format);
+            return wObject;
         }
 
         ///<returns>  </returns>
@@ -46,12 +45,11 @@ namespace Wayland
         ///<param name = "stride2">  </param>
         public WlBuffer CreatePlanarBuffer(uint name, int width, int height, uint format, int offset0, int stride0, int offset1, int stride1, int offset2, int stride2)
         {
-            uint id = connection.Create();
-            WlBuffer wObject = new WlBuffer(this.id, ref id, connection);
+            WlBuffer wObject = connection.Create<WlBuffer>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreatePlanarBuffer, id, name, width, height, format, offset0, stride0, offset1, stride1, offset2, stride2);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreatePlanarBuffer}({id},{name},{width},{height},{format},{offset0},{stride0},{offset1},{stride1},{offset2},{stride2})");
-            connection[id] = wObject;
-            return (WlBuffer)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreatePlanarBuffer", id, name, width, height, format, offset0, stride0, offset1, stride1, offset2, stride2);
+            return wObject;
         }
 
         ///<returns>  </returns>
@@ -67,12 +65,11 @@ namespace Wayland
         ///<param name = "stride2">  </param>
         public WlBuffer CreatePrimeBuffer(IntPtr name, int width, int height, uint format, int offset0, int stride0, int offset1, int stride1, int offset2, int stride2)
         {
-            uint id = connection.Create();
-            WlBuffer wObject = new WlBuffer(this.id, ref id, connection);
+            WlBuffer wObject = connection.Create<WlBuffer>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreatePrimeBuffer, id, name, width, height, format, offset0, stride0, offset1, stride1, offset2, stride2);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreatePrimeBuffer}({id},{name},{width},{height},{format},{offset0},{stride0},{offset1},{stride1},{offset2},{stride2})");
-            connection[id] = wObject;
-            return (WlBuffer)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreatePrimeBuffer", id, name, width, height, format, offset0, stride0, offset1, stride1, offset2, stride2);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -95,17 +92,17 @@ namespace Wayland
             Capabilities
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Device:
                 {
-                    var name = (string)arguments[0];
+                    var name = arguments[0].s;
                     if (this.device != null)
                     {
                         this.device.Invoke(this, name);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Device}({this},{name})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Device");
                     }
 
                     break;
@@ -113,11 +110,11 @@ namespace Wayland
 
                 case EventOpcode.Format:
                 {
-                    var format = (uint)arguments[0];
+                    var format = arguments[0].u;
                     if (this.format != null)
                     {
                         this.format.Invoke(this, format);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Format}({this},{format})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Format", this, format);
                     }
 
                     break;
@@ -128,7 +125,7 @@ namespace Wayland
                     if (this.authenticated != null)
                     {
                         this.authenticated.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Authenticated}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Authenticated", this);
                     }
 
                     break;
@@ -136,11 +133,11 @@ namespace Wayland
 
                 case EventOpcode.Capabilities:
                 {
-                    var value = (uint)arguments[0];
+                    var value = arguments[0].u;
                     if (this.capabilities != null)
                     {
                         this.capabilities.Invoke(this, value);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Capabilities}({this},{value})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Capabilities", this, value);
                     }
 
                     break;

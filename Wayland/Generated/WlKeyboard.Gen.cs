@@ -13,7 +13,7 @@ namespace Wayland
     public partial class WlKeyboard : WaylandObject
     {
         public const string INTERFACE = "wl_keyboard";
-        public WlKeyboard(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
+        public WlKeyboard(uint id, WaylandConnection connection, uint version = 8) : base(id, version, connection)
         {
         }
 
@@ -23,7 +23,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -128,19 +128,19 @@ namespace Wayland
             RepeatInfo
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Keymap:
                 {
-                    var format = (KeymapFormatFlag)arguments[0];
-                    var fd = (IntPtr)arguments[1];
-                    var size = (uint)arguments[2];
+                    var format = (KeymapFormatFlag)arguments[0].u;
+                    var fd = arguments[1].p;
+                    var size = arguments[2].u;
                     if (this.keymap != null)
                     {
                         this.keymap.Invoke(this, format, fd, size);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Keymap}({this},{format},{fd},{size})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Keymap");
                     }
 
                     break;
@@ -148,13 +148,13 @@ namespace Wayland
 
                 case EventOpcode.Enter:
                 {
-                    var serial = (uint)arguments[0];
-                    var surface = connection[(uint)arguments[1]];
-                    var keys = (byte[])arguments[2];
+                    var serial = arguments[0].u;
+                    var surface = connection[arguments[1].u];
+                    var keys = arguments[2].b;
                     if (this.enter != null)
                     {
                         this.enter.Invoke(this, serial, surface, keys);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Enter}({this},{serial},{surface},{keys})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Enter", this, serial, surface, keys);
                     }
 
                     break;
@@ -162,12 +162,12 @@ namespace Wayland
 
                 case EventOpcode.Leave:
                 {
-                    var serial = (uint)arguments[0];
-                    var surface = connection[(uint)arguments[1]];
+                    var serial = arguments[0].u;
+                    var surface = connection[arguments[1].u];
                     if (this.leave != null)
                     {
                         this.leave.Invoke(this, serial, surface);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Leave}({this},{serial},{surface})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Leave", this, serial, surface);
                     }
 
                     break;
@@ -175,14 +175,14 @@ namespace Wayland
 
                 case EventOpcode.Key:
                 {
-                    var serial = (uint)arguments[0];
-                    var time = (uint)arguments[1];
-                    var key = (uint)arguments[2];
-                    var state = (KeyStateFlag)arguments[3];
+                    var serial = arguments[0].u;
+                    var time = arguments[1].u;
+                    var key = arguments[2].u;
+                    var state = (KeyStateFlag)arguments[3].u;
                     if (this.key != null)
                     {
                         this.key.Invoke(this, serial, time, key, state);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Key}({this},{serial},{time},{key},{state})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Key", this, serial, time, key, state);
                     }
 
                     break;
@@ -190,15 +190,15 @@ namespace Wayland
 
                 case EventOpcode.Modifiers:
                 {
-                    var serial = (uint)arguments[0];
-                    var modsDepressed = (uint)arguments[1];
-                    var modsLatched = (uint)arguments[2];
-                    var modsLocked = (uint)arguments[3];
-                    var group = (uint)arguments[4];
+                    var serial = arguments[0].u;
+                    var modsDepressed = arguments[1].u;
+                    var modsLatched = arguments[2].u;
+                    var modsLocked = arguments[3].u;
+                    var group = arguments[4].u;
                     if (this.modifiers != null)
                     {
                         this.modifiers.Invoke(this, serial, modsDepressed, modsLatched, modsLocked, group);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Modifiers}({this},{serial},{modsDepressed},{modsLatched},{modsLocked},{group})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Modifiers", this, serial, modsDepressed, modsLatched, modsLocked, group);
                     }
 
                     break;
@@ -206,19 +206,19 @@ namespace Wayland
 
                 case EventOpcode.RepeatInfo:
                 {
-                    var rate = (int)arguments[0];
-                    var delay = (int)arguments[1];
+                    var rate = arguments[0].i;
+                    var delay = arguments[1].i;
                     if (this.repeatInfo != null)
                     {
                         this.repeatInfo.Invoke(this, rate, delay);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.RepeatInfo}({this},{rate},{delay})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "RepeatInfo", this, rate, delay);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -239,7 +239,7 @@ namespace Wayland
                 case EventOpcode.RepeatInfo:
                     return new WaylandType[]{WaylandType.Int, WaylandType.Int, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

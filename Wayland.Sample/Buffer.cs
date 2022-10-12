@@ -20,14 +20,14 @@ namespace Wayland.Sample
         public uint glTexture;
         public uint glFBO;
 
-        public void CreateBuffer(Device device, ZwpLinuxDmabufV1 dmabuf,int width, int height, uint format, ZwpLinuxBufferParamsV1.FlagsFlag flag, uint modifier)
+        public Buffer(Device device, ZwpLinuxDmabufV1 dmabuf,int width, int height, uint format, ZwpLinuxBufferParamsV1.FlagsFlag flag, uint modifier)
         {
             ZwpLinuxBufferParamsV1 linuxBufferParams = dmabuf.CreateParams();
 
             linuxBufferParams.created += BufferCreated;
             linuxBufferParams.failed += BufferFailed;
 
-            bo = GBM.gbm_bo_create(device.gb_device, (uint)width, (uint)height, format, (uint)gbm_bo_flags.GBM_BO_USE_RENDERING);
+            bo = GBM.gbm_bo_create(device.gb_device, (uint)width, (uint)height, format, (uint)(gbm_bo_flags.GBM_BO_USE_RENDERING | gbm_bo_flags.GBM_BO_USE_SCANOUT));
 
             dmabufFD = GBM.gbm_bo_get_fd(bo);
             stride = GBM.gbm_bo_get_stride(bo);
@@ -50,7 +50,6 @@ namespace Wayland.Sample
         {
             this.buffer = tbuffer;
             this.buffer.release += ReleaseBuffer;
-
             bufferParams.Destroy();
         }
 

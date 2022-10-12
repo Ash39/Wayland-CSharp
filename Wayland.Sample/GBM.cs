@@ -246,10 +246,12 @@ namespace Wayland.Sample
         public ulong modifier;
     };
 
+    [Flags]
     public enum gbm_bo_flags {
         /**
             * Buffer is going to be presented to the screen using an API such as KMS
             */
+        
         GBM_BO_USE_SCANOUT      = (1 << 0),
         /**
             * Buffer is going to be used as cursor

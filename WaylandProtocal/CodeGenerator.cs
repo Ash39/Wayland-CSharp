@@ -49,7 +49,7 @@ namespace WaylandProtocal
                         classCode += string.Format("public partial class {0} : WaylandObject", ToTitleCase(@interface.Name)) + Environment.NewLine;
                         classCode += "{" + Environment.NewLine;
                         classCode += string.Format(@"public const string INTERFACE = ""{0}"";", @interface.Name) + Environment.NewLine;
-                        classCode += string.Format("public {0} (uint factoryId, ref uint id, WaylandConnection connection, uint version = {1}) : base(factoryId, ref id, version, connection)", ToTitleCase(@interface.Name), @interface.Version) + Environment.NewLine;
+                        classCode += string.Format("public {0} (uint id, WaylandConnection connection, uint version = {1}) : base(id, version, connection)", ToTitleCase(@interface.Name), @interface.Version) + Environment.NewLine;
                         classCode += "{";
                         classCode += "}";
                         classCode += BuildMethods(@interface.Requests) + Environment.NewLine;
@@ -109,24 +109,23 @@ namespace WaylandProtocal
                     string wtype = GetType(arg.Type);
                     if (wtype == "WaylandObject")
                     {
-                        waylandUseBase += string.Format("var {0} = connection[(uint)arguments[{2}]];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
+                        waylandUseBase += string.Format("var {0} = connection[arguments[{2}].u];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
                     }
                     else if (wtype == "new_id")
                     {
                         wtype = ToTitleCase(arg.Interface);
-                        waylandUseBase += $@"uint new_id = (uint)arguments[{i}];" + Environment.NewLine;
-                        waylandUseBase += string.Format("{0} {1} = new {0}(this.id, ref new_id, connection);", wtype, ToCamelCase(arg.Name)) + Environment.NewLine;
-                        waylandUseBase += $"connection.ServerObjectAdd({ToCamelCase(arg.Name)});" + Environment.NewLine;
+                        waylandUseBase += $@"uint new_id = arguments[{i}].u;" + Environment.NewLine;
+                        waylandUseBase += string.Format("{0} {1} = connection.Create<{0}>(new_id, this.version);", wtype, ToCamelCase(arg.Name)) + Environment.NewLine;
                     }
                     else
                     {
                         if (string.IsNullOrEmpty(arg.Enum))
                         {
-                            waylandUseBase += string.Format("var {0} = ({1})arguments[{2}];", ToCamelCase(arg.Name), wtype, i) + Environment.NewLine;
+                            waylandUseBase += string.Format("var {0} = arguments[{2}].{1};", ToCamelCase(arg.Name), GetWlType(wtype), i) + Environment.NewLine;
                         }
                         else
                         {
-                            waylandUseBase += string.Format("var {0} = ({1})arguments[{2}];", ToCamelCase(arg.Name), ToTitleCase(arg.Enum) + "Flag", i) + Environment.NewLine;
+                            waylandUseBase += string.Format("var {0} = ({1})arguments[{2}].u;", ToCamelCase(arg.Name), ToTitleCase(arg.Enum) + "Flag", i) + Environment.NewLine;
                         }
                     }
 
@@ -148,7 +147,8 @@ namespace WaylandProtocal
                 waylandUseBase += string.Format("if(this.{0} != null)", ToCamelCase(message.Name)) + Environment.NewLine;
                 waylandUseBase += "{";
                 waylandUseBase += string.Format("this.{0}.Invoke({1});", ToCamelCase(message.Name), string.Join(", ", augumentsNames)) + Environment.NewLine;
-                waylandUseBase += string.Format(@"DebugLog.WriteLine($""{{ INTERFACE}}@{{this.id}}.{{ EventOpcode.{0} }}({1})"");" + Environment.NewLine, ToTitleCase(message.Name), string.Join(",", augumentsNames.Select(c => "{" + c + "}")));
+                
+                waylandUseBase += string.Format(@"DebugLog.WriteLine(DebugType.Event, INTERFACE ,this.id, ""{0}"" {1});" + Environment.NewLine, ToTitleCase(message.Name),   auguments.Count > 0 ? "," +  string.Join(",", augumentsNames) : String.Empty);
                 waylandUseBase += "}";
 
                 actionEvents.Add(BuildHeaderComment(message.Description));
@@ -172,17 +172,17 @@ namespace WaylandProtocal
             waylandTypeBase += "{" + Environment.NewLine;
             waylandTypeBase += string.Format("{0}", string.Join(Environment.NewLine, auguments));
             waylandTypeBase += "default:" + Environment.NewLine;
-            waylandTypeBase += @"throw new ArgumentOutOfRangeException(""unknown event"");" + Environment.NewLine;
+            waylandTypeBase +=  @"throw new ArgumentOutOfRangeException(nameof(opCode) ,""unknown event"");" + Environment.NewLine;
             waylandTypeBase += "}" + Environment.NewLine;
             waylandTypeBase += "}" + Environment.NewLine;
 
-            string waylandEventBase = "public override void Event(ushort opCode, object[] arguments)" + Environment.NewLine;
+            string waylandEventBase = "public override void Event(ushort opCode, WlType[] arguments)" + Environment.NewLine;
             waylandEventBase += "{" + Environment.NewLine;
             waylandEventBase += "switch ((EventOpcode)opCode)" + Environment.NewLine;
             waylandEventBase += "{" + Environment.NewLine;
             waylandEventBase += string.Format("{0}", string.Join(Environment.NewLine, augumentsUse));
             waylandEventBase += "default:" + Environment.NewLine;
-            waylandEventBase += @"throw new ArgumentOutOfRangeException(""unknown event"");" + Environment.NewLine;
+            waylandEventBase += @"throw new ArgumentOutOfRangeException(nameof(opCode) ,""unknown event"");" + Environment.NewLine;
             waylandEventBase += "}" + Environment.NewLine;
             waylandEventBase += "}" + Environment.NewLine;
 
@@ -209,9 +209,7 @@ namespace WaylandProtocal
                 List<string> methodArgsUsage = new List<string>();
                 string returnCall = string.Empty;
                 string returnType = "void";
-                string generateId = string.Empty;
                 string generateNew = string.Empty;
-                string generateNewSet = string.Empty;
                 opCodes.Add(ToTitleCase(message.Name));
 
                 foreach (Argument arg in message.Arguments)
@@ -237,18 +235,19 @@ namespace WaylandProtocal
                     if (arg.Type == "new_id")
                     {
                         returnType = string.IsNullOrEmpty(arg.Interface) ? "T" : ToTitleCase(arg.Interface);
-                        returnCall = $"return ({returnType})connection[{arg.Name}];";
-                        generateId = $"uint {arg.Name} = connection.Create();";
+                        
                         if (string.IsNullOrEmpty(arg.Interface))
                         {
-                            generateNew = $"WaylandObject wObject = (WaylandObject)Activator.CreateInstance(typeof(T), this.id, {arg.Name}, connection, version);" + Environment.NewLine;
-                            generateNew += $"{arg.Name} = wObject.id;";
+                            generateNew = $"WaylandObject wObject = (WaylandObject)connection.Create<T>(0, version);" + Environment.NewLine;
+                            generateNew += $"uint {arg.Name} = wObject.id;";
+                            returnCall = $"return (T)wObject;";
                         }
                         else
                         {
-                            generateNew = $"{returnType} wObject = new {returnType}(this.id, ref {arg.Name}, connection);";
+                            generateNew = $"{returnType} wObject = connection.Create<{returnType}>(0, this.version);";
+                            generateNew += $"uint {arg.Name} = wObject.id;";
+                            returnCall = $"return wObject;";
                         }
-                        generateNewSet = $"connection[{arg.Name}] = wObject;";
                         goto extraArgs;
                     }
 
@@ -295,7 +294,6 @@ namespace WaylandProtocal
                     requestBase += string.Format("public {0} {1}({2})" + Environment.NewLine, returnType, methodName, string.Join(",",methodArgs));
 
                 requestBase += "{" + Environment.NewLine;
-                requestBase += string.Format("{0}" + Environment.NewLine, generateId);
                 requestBase += string.Format("{0}" + Environment.NewLine, generateNew);
                 requestBase += string.Format("connection.Marshal(this.id ,(ushort)RequestOpcode.{0}{1});" + Environment.NewLine, methodName, string.Join(",", methodArgsUsage));
 
@@ -304,8 +302,7 @@ namespace WaylandProtocal
                     methodArgsUsage[0] = methodArgsUsage[0].Replace(",", string.Empty);
                 }
 
-                requestBase += string.Format(@"DebugLog.WriteLine($""-->{{ INTERFACE}}@{{this.id}}.{{ RequestOpcode.{0} }}({1})"");" + Environment.NewLine, methodName, string.Join(",", methodArgsUsage.Select(c => "{"+c+"}")));
-                requestBase += string.Format("{0}" + Environment.NewLine, generateNewSet);
+                requestBase += string.Format(@"DebugLog.WriteLine(DebugType.Request, INTERFACE ,this.id, ""{0}"" {1});" + Environment.NewLine, methodName, methodArgsUsage.Count > 0 ? "," + string.Join(",", methodArgsUsage) : String.Empty);
                 requestBase += string.Format("{0}" + Environment.NewLine, returnCall);
                 requestBase += "}" + Environment.NewLine;
                 
@@ -446,6 +443,29 @@ namespace WaylandProtocal
                     return "byte[]";
                 case "object":
                     return "WaylandObject";
+                default:
+                    return null;
+            }
+        }
+        
+        private static string GetWlType(string type) 
+        {
+            switch (type)
+            {
+                case "int":
+                    return "i";
+                case "uint":
+                    return "u";
+                case "string":
+                    return "s";
+                case "float":
+                    return "f";
+                case "double":
+                    return "d";
+                case "byte[]":
+                    return "b";
+                case "IntPtr":
+                    return "p";
                 default:
                     return null;
             }

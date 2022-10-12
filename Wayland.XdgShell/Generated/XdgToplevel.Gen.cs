@@ -30,7 +30,7 @@ namespace Wayland
     public partial class XdgToplevel : WaylandObject
     {
         public const string INTERFACE = "xdg_toplevel";
-        public XdgToplevel(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public XdgToplevel(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -44,7 +44,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -75,7 +75,7 @@ namespace Wayland
         public void SetParent(XdgToplevel parent)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetParent, parent.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetParent}({parent.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetParent", parent.id);
         }
 
         ///<Summary>
@@ -96,7 +96,7 @@ namespace Wayland
         public void SetTitle(string title)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetTitle, title);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetTitle}({title})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetTitle", title);
         }
 
         ///<Summary>
@@ -137,7 +137,7 @@ namespace Wayland
         public void SetAppId(string app_id)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetAppId, app_id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetAppId}({app_id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetAppId", app_id);
         }
 
         ///<Summary>
@@ -165,7 +165,7 @@ namespace Wayland
         public void ShowWindowMenu(WlSeat seat, uint serial, int x, int y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.ShowWindowMenu, seat.id, serial, x, y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.ShowWindowMenu}({seat.id},{serial},{x},{y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "ShowWindowMenu", seat.id, serial, x, y);
         }
 
         ///<Summary>
@@ -197,7 +197,7 @@ namespace Wayland
         public void Move(WlSeat seat, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Move, seat.id, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Move}({seat.id},{serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Move", seat.id, serial);
         }
 
         ///<Summary>
@@ -247,7 +247,7 @@ namespace Wayland
         public void Resize(WlSeat seat, uint serial, ResizeEdgeFlag edges)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Resize, seat.id, serial, (uint)edges);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Resize}({seat.id},{serial},{(uint)edges})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Resize", seat.id, serial, (uint)edges);
         }
 
         ///<Summary>
@@ -303,7 +303,7 @@ namespace Wayland
         public void SetMaxSize(int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetMaxSize, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetMaxSize}({width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetMaxSize", width, height);
         }
 
         ///<Summary>
@@ -359,7 +359,7 @@ namespace Wayland
         public void SetMinSize(int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetMinSize, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetMinSize}({width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetMinSize", width, height);
         }
 
         ///<Summary>
@@ -393,7 +393,7 @@ namespace Wayland
         public void SetMaximized()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetMaximized);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetMaximized}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetMaximized");
         }
 
         ///<Summary>
@@ -429,7 +429,7 @@ namespace Wayland
         public void UnsetMaximized()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.UnsetMaximized);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.UnsetMaximized}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "UnsetMaximized");
         }
 
         ///<Summary>
@@ -468,7 +468,7 @@ namespace Wayland
         public void SetFullscreen(WlOutput output)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetFullscreen, output.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetFullscreen}({output.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetFullscreen", output.id);
         }
 
         ///<Summary>
@@ -500,7 +500,7 @@ namespace Wayland
         public void UnsetFullscreen()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.UnsetFullscreen);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.UnsetFullscreen}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "UnsetFullscreen");
         }
 
         ///<Summary>
@@ -520,7 +520,7 @@ namespace Wayland
         public void SetMinimized()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetMinimized);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetMinimized}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetMinimized");
         }
 
         public enum RequestOpcode : ushort
@@ -647,19 +647,19 @@ namespace Wayland
             WmCapabilities
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Configure:
                 {
-                    var width = (int)arguments[0];
-                    var height = (int)arguments[1];
-                    var states = (byte[])arguments[2];
+                    var width = arguments[0].i;
+                    var height = arguments[1].i;
+                    var states = arguments[2].b;
                     if (this.configure != null)
                     {
                         this.configure.Invoke(this, width, height, states);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Configure}({this},{width},{height},{states})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Configure");
                     }
 
                     break;
@@ -670,7 +670,7 @@ namespace Wayland
                     if (this.close != null)
                     {
                         this.close.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Close}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Close", this);
                     }
 
                     break;
@@ -678,12 +678,12 @@ namespace Wayland
 
                 case EventOpcode.ConfigureBounds:
                 {
-                    var width = (int)arguments[0];
-                    var height = (int)arguments[1];
+                    var width = arguments[0].i;
+                    var height = arguments[1].i;
                     if (this.configureBounds != null)
                     {
                         this.configureBounds.Invoke(this, width, height);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.ConfigureBounds}({this},{width},{height})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "ConfigureBounds", this, width, height);
                     }
 
                     break;
@@ -691,18 +691,18 @@ namespace Wayland
 
                 case EventOpcode.WmCapabilities:
                 {
-                    var capabilities = (byte[])arguments[0];
+                    var capabilities = arguments[0].b;
                     if (this.wmCapabilities != null)
                     {
                         this.wmCapabilities.Invoke(this, capabilities);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.WmCapabilities}({this},{capabilities})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "WmCapabilities", this, capabilities);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -719,7 +719,7 @@ namespace Wayland
                 case EventOpcode.WmCapabilities:
                     return new WaylandType[]{WaylandType.Array, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

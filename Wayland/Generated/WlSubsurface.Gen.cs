@@ -67,7 +67,7 @@ namespace Wayland
     public partial class WlSubsurface : WaylandObject
     {
         public const string INTERFACE = "wl_subsurface";
-        public WlSubsurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlSubsurface(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -84,7 +84,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -116,7 +116,7 @@ namespace Wayland
         public void SetPosition(int x, int y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetPosition, x, y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetPosition}({x},{y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetPosition", x, y);
         }
 
         ///<Summary>
@@ -145,7 +145,7 @@ namespace Wayland
         public void PlaceAbove(WlSurface sibling)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.PlaceAbove, sibling.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.PlaceAbove}({sibling.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "PlaceAbove", sibling.id);
         }
 
         ///<Summary>
@@ -159,7 +159,7 @@ namespace Wayland
         public void PlaceBelow(WlSurface sibling)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.PlaceBelow, sibling.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.PlaceBelow}({sibling.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "PlaceBelow", sibling.id);
         }
 
         ///<Summary>
@@ -185,7 +185,7 @@ namespace Wayland
         public void SetSync()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetSync);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetSync}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetSync");
         }
 
         ///<Summary>
@@ -219,7 +219,7 @@ namespace Wayland
         public void SetDesync()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetDesync);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetDesync}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetDesync");
         }
 
         public enum RequestOpcode : ushort
@@ -236,12 +236,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -250,7 +250,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

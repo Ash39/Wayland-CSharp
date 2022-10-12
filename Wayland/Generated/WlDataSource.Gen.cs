@@ -15,7 +15,7 @@ namespace Wayland
     public partial class WlDataSource : WaylandObject
     {
         public const string INTERFACE = "wl_data_source";
-        public WlDataSource(uint factoryId, ref uint id, WaylandConnection connection, uint version = 3) : base(factoryId, ref id, version, connection)
+        public WlDataSource(uint id, WaylandConnection connection, uint version = 3) : base(id, version, connection)
         {
         }
 
@@ -31,7 +31,7 @@ namespace Wayland
         public void Offer(string mime_type)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Offer, mime_type);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Offer}({mime_type})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Offer", mime_type);
         }
 
         ///<Summary>
@@ -43,7 +43,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -70,7 +70,7 @@ namespace Wayland
         public void SetActions(WlDataDeviceManager.DndActionFlag dnd_actions)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetActions, (uint)dnd_actions);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetActions}({(uint)dnd_actions})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetActions", (uint)dnd_actions);
         }
 
         public enum RequestOpcode : ushort
@@ -205,17 +205,17 @@ namespace Wayland
             Action
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Target:
                 {
-                    var mimeType = (string)arguments[0];
+                    var mimeType = arguments[0].s;
                     if (this.target != null)
                     {
                         this.target.Invoke(this, mimeType);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Target}({this},{mimeType})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Target");
                     }
 
                     break;
@@ -223,12 +223,12 @@ namespace Wayland
 
                 case EventOpcode.Send:
                 {
-                    var mimeType = (string)arguments[0];
-                    var fd = (IntPtr)arguments[1];
+                    var mimeType = arguments[0].s;
+                    var fd = arguments[1].p;
                     if (this.send != null)
                     {
                         this.send.Invoke(this, mimeType, fd);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Send}({this},{mimeType},{fd})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Send", this, mimeType, fd);
                     }
 
                     break;
@@ -239,7 +239,7 @@ namespace Wayland
                     if (this.cancelled != null)
                     {
                         this.cancelled.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Cancelled}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Cancelled", this);
                     }
 
                     break;
@@ -250,7 +250,7 @@ namespace Wayland
                     if (this.dndDropPerformed != null)
                     {
                         this.dndDropPerformed.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.DndDropPerformed}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "DndDropPerformed", this);
                     }
 
                     break;
@@ -261,7 +261,7 @@ namespace Wayland
                     if (this.dndFinished != null)
                     {
                         this.dndFinished.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.DndFinished}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "DndFinished", this);
                     }
 
                     break;
@@ -269,18 +269,18 @@ namespace Wayland
 
                 case EventOpcode.Action:
                 {
-                    var dndAction = (WlDataDeviceManager.DndActionFlag)arguments[0];
+                    var dndAction = (WlDataDeviceManager.DndActionFlag)arguments[0].u;
                     if (this.action != null)
                     {
                         this.action.Invoke(this, dndAction);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Action}({this},{dndAction})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Action", this, dndAction);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -301,7 +301,7 @@ namespace Wayland
                 case EventOpcode.Action:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

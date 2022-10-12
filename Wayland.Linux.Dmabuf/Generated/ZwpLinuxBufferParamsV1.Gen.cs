@@ -27,7 +27,7 @@ namespace Wayland
     public partial class ZwpLinuxBufferParamsV1 : WaylandObject
     {
         public const string INTERFACE = "zwp_linux_buffer_params_v1";
-        public ZwpLinuxBufferParamsV1(uint factoryId, ref uint id, WaylandConnection connection, uint version = 4) : base(factoryId, ref id, version, connection)
+        public ZwpLinuxBufferParamsV1(uint id, WaylandConnection connection, uint version = 4) : base(id, version, connection)
         {
         }
 
@@ -41,7 +41,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -77,7 +77,7 @@ namespace Wayland
         public void Add(IntPtr fd, uint plane_idx, uint offset, uint stride, uint modifier_hi, uint modifier_lo)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Add, fd, plane_idx, offset, stride, modifier_hi, modifier_lo);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Add}({fd},{plane_idx},{offset},{stride},{modifier_hi},{modifier_lo})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Add", fd, plane_idx, offset, stride, modifier_hi, modifier_lo);
         }
 
         ///<Summary>
@@ -160,7 +160,7 @@ namespace Wayland
         public void Create(int width, int height, uint format, FlagsFlag flags)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Create, width, height, format, (uint)flags);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Create}({width},{height},{format},{(uint)flags})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Create", width, height, format, (uint)flags);
         }
 
         ///<Summary>
@@ -201,12 +201,11 @@ namespace Wayland
         ///<param name = "flags"> see enum flags </param>
         public WlBuffer CreateImmed(int width, int height, uint format, FlagsFlag flags)
         {
-            uint buffer_id = connection.Create();
-            WlBuffer wObject = new WlBuffer(this.id, ref buffer_id, connection);
+            WlBuffer wObject = connection.Create<WlBuffer>(0, this.version);
+            uint buffer_id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateImmed, buffer_id, width, height, format, (uint)flags);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateImmed}({buffer_id},{width},{height},{format},{(uint)flags})");
-            connection[buffer_id] = wObject;
-            return (WlBuffer)connection[buffer_id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateImmed", buffer_id, width, height, format, (uint)flags);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -248,19 +247,18 @@ namespace Wayland
             Failed
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Created:
                 {
-                    uint new_id = (uint)arguments[0];
-                    WlBuffer buffer = new WlBuffer(this.id, ref new_id, connection);
-                    connection.ServerObjectAdd(buffer);
+                    uint new_id = arguments[0].u;
+                    WlBuffer buffer = connection.Create<WlBuffer>(new_id, this.version);
                     if (this.created != null)
                     {
                         this.created.Invoke(this, buffer);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Created}({this},{buffer})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Created");
                     }
 
                     break;
@@ -271,7 +269,7 @@ namespace Wayland
                     if (this.failed != null)
                     {
                         this.failed.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Failed}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Failed", this);
                     }
 
                     break;

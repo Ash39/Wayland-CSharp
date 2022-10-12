@@ -13,6 +13,8 @@ namespace Wayland.Sample
         private IntPtr eglDisplay;
         private IntPtr context;
 
+        private WlCallback frameCallback;
+
         public Action render { get; set; }
 
         private bool isInitated;
@@ -122,7 +124,12 @@ namespace Wayland.Sample
             string str = Gl.GetString(StringName.Version);
             isInitated = true;
         }
-        
+
+        public void ForceFrame()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Present(Window window)
         {
             if(!isInitated)
@@ -139,8 +146,8 @@ namespace Wayland.Sample
 
             window.surface.Attach(buffer.buffer,0,0);
             window.surface.DamageBuffer(0,0, int.MaxValue, int.MaxValue);
-            window.frameCallback = window.surface.Frame();
-            window.frameCallback.done += (callback, time) => 
+            frameCallback = window.surface.Frame();
+            frameCallback.done += (callback, time) => 
             {
                 Present(window);
             };

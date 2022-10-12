@@ -92,7 +92,7 @@ namespace Wayland
     public partial class ZwpLinuxDmabufV1 : WaylandObject
     {
         public const string INTERFACE = "zwp_linux_dmabuf_v1";
-        public ZwpLinuxDmabufV1(uint factoryId, ref uint id, WaylandConnection connection, uint version = 4) : base(factoryId, ref id, version, connection)
+        public ZwpLinuxDmabufV1(uint id, WaylandConnection connection, uint version = 4) : base(id, version, connection)
         {
         }
 
@@ -106,7 +106,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -121,12 +121,11 @@ namespace Wayland
         ///<returns> the new temporary </returns>
         public ZwpLinuxBufferParamsV1 CreateParams()
         {
-            uint params_id = connection.Create();
-            ZwpLinuxBufferParamsV1 wObject = new ZwpLinuxBufferParamsV1(this.id, ref params_id, connection);
+            ZwpLinuxBufferParamsV1 wObject = connection.Create<ZwpLinuxBufferParamsV1>(0, this.version);
+            uint params_id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateParams, params_id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateParams}({params_id})");
-            connection[params_id] = wObject;
-            return (ZwpLinuxBufferParamsV1)connection[params_id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateParams", params_id);
+            return wObject;
         }
 
         ///<Summary>
@@ -141,12 +140,11 @@ namespace Wayland
         ///<returns>  </returns>
         public ZwpLinuxDmabufFeedbackV1 GetDefaultFeedback()
         {
-            uint id = connection.Create();
-            ZwpLinuxDmabufFeedbackV1 wObject = new ZwpLinuxDmabufFeedbackV1(this.id, ref id, connection);
+            ZwpLinuxDmabufFeedbackV1 wObject = connection.Create<ZwpLinuxDmabufFeedbackV1>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetDefaultFeedback, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetDefaultFeedback}({id})");
-            connection[id] = wObject;
-            return (ZwpLinuxDmabufFeedbackV1)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetDefaultFeedback", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -165,12 +163,11 @@ namespace Wayland
         ///<param name = "surface">  </param>
         public ZwpLinuxDmabufFeedbackV1 GetSurfaceFeedback(WlSurface surface)
         {
-            uint id = connection.Create();
-            ZwpLinuxDmabufFeedbackV1 wObject = new ZwpLinuxDmabufFeedbackV1(this.id, ref id, connection);
+            ZwpLinuxDmabufFeedbackV1 wObject = connection.Create<ZwpLinuxDmabufFeedbackV1>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetSurfaceFeedback, id, surface.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetSurfaceFeedback}({id},{surface.id})");
-            connection[id] = wObject;
-            return (ZwpLinuxDmabufFeedbackV1)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetSurfaceFeedback", id, surface.id);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -239,17 +236,17 @@ namespace Wayland
             Modifier
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Format:
                 {
-                    var format = (uint)arguments[0];
+                    var format = arguments[0].u;
                     if (this.format != null)
                     {
                         this.format.Invoke(this, format);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Format}({this},{format})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Format");
                     }
 
                     break;
@@ -257,13 +254,13 @@ namespace Wayland
 
                 case EventOpcode.Modifier:
                 {
-                    var format = (uint)arguments[0];
-                    var modifierHi = (uint)arguments[1];
-                    var modifierLo = (uint)arguments[2];
+                    var format = arguments[0].u;
+                    var modifierHi = arguments[1].u;
+                    var modifierLo = arguments[2].u;
                     if (this.modifier != null)
                     {
                         this.modifier.Invoke(this, format, modifierHi, modifierLo);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Modifier}({this},{format},{modifierHi},{modifierLo})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Modifier", this, format, modifierHi, modifierLo);
                     }
 
                     break;

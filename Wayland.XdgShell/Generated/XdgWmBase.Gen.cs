@@ -16,7 +16,7 @@ namespace Wayland
     public partial class XdgWmBase : WaylandObject
     {
         public const string INTERFACE = "xdg_wm_base";
-        public XdgWmBase(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public XdgWmBase(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -34,7 +34,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -48,12 +48,11 @@ namespace Wayland
         ///<returns>  </returns>
         public XdgPositioner CreatePositioner()
         {
-            uint id = connection.Create();
-            XdgPositioner wObject = new XdgPositioner(this.id, ref id, connection);
+            XdgPositioner wObject = connection.Create<XdgPositioner>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreatePositioner, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreatePositioner}({id})");
-            connection[id] = wObject;
-            return (XdgPositioner)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreatePositioner", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -80,12 +79,11 @@ namespace Wayland
         ///<param name = "surface">  </param>
         public XdgSurface GetXdgSurface(WlSurface surface)
         {
-            uint id = connection.Create();
-            XdgSurface wObject = new XdgSurface(this.id, ref id, connection);
+            XdgSurface wObject = connection.Create<XdgSurface>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetXdgSurface, id, surface.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetXdgSurface}({id},{surface.id})");
-            connection[id] = wObject;
-            return (XdgSurface)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetXdgSurface", id, surface.id);
+            return wObject;
         }
 
         ///<Summary>
@@ -99,7 +97,7 @@ namespace Wayland
         public void Pong(uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Pong, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Pong}({serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Pong", serial);
         }
 
         public enum RequestOpcode : ushort
@@ -134,24 +132,24 @@ namespace Wayland
             Ping
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Ping:
                 {
-                    var serial = (uint)arguments[0];
+                    var serial = arguments[0].u;
                     if (this.ping != null)
                     {
                         this.ping.Invoke(this, serial);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Ping}({this},{serial})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Ping");
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -162,7 +160,7 @@ namespace Wayland
                 case EventOpcode.Ping:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

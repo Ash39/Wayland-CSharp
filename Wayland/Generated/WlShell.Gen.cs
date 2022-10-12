@@ -22,7 +22,7 @@ namespace Wayland
     public partial class WlShell : WaylandObject
     {
         public const string INTERFACE = "wl_shell";
-        public WlShell(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlShell(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -41,12 +41,11 @@ namespace Wayland
         ///<param name = "surface"> surface to be given the shell surface role </param>
         public WlShellSurface GetShellSurface(WlSurface surface)
         {
-            uint id = connection.Create();
-            WlShellSurface wObject = new WlShellSurface(this.id, ref id, connection);
+            WlShellSurface wObject = connection.Create<WlShellSurface>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetShellSurface, id, surface.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetShellSurface}({id},{surface.id})");
-            connection[id] = wObject;
-            return (WlShellSurface)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetShellSurface", id, surface.id);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -58,12 +57,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -72,7 +71,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

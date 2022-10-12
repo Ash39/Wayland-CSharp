@@ -16,12 +16,15 @@ namespace Wayland
     public class WaylandSocket
     {
         private int socket;
-        private List<byte> writeBuffer;
+        private MemoryStream writeBuffer;
         private byte[] readBuffer;
         private List<int> writeFdBuffer;
         private int[] readFdBuffer;
         internal int position;
         internal int fdPosition;
+        internal SemaphoreSlim writeSemaphore;
+        private Pollfd[] pollfds;
+        private int pollResult;
 
 
         public WaylandSocket(string address)
@@ -34,12 +37,16 @@ namespace Wayland
             if (res != 0)
                 throw new IOException($"Failed to connect socket (handle={socket}, code={res}): {Syscall.GetLastError()}");
 
-            this.writeBuffer = new List<byte>();
+            this.writeBuffer = new MemoryStream();
             this.writeFdBuffer = new List<int>();
+            this.writeSemaphore = new SemaphoreSlim(1, 1);
+            pollfds = new Pollfd[] { new Pollfd { events = PollEvents.POLLIN, fd = socket } };
         }
 
         private void InternalWrite() 
         {
+            writeSemaphore.Wait();
+            
             var cmsgbuffer = new byte[Syscall.CMSG_SPACE((ulong)writeFdBuffer.Count * sizeof(int))];
             var cmsghdr = new Cmsghdr
             {
@@ -83,19 +90,19 @@ namespace Wayland
             bufferHandle.Free();
 
             writeFdBuffer.Clear();
-            writeBuffer.Clear();
+            writeBuffer.Position = 0;
+            writeBuffer.SetLength(0);
+            
+            writeSemaphore.Release();
         }
 
-        private int Read() 
+        private int Read(int timeout) 
         {
             position = 0;
 
-            Pollfd[] pollfds = new Pollfd[] { new Pollfd { events = PollEvents.POLLIN, fd = socket } };
-
-            int result = Syscall.poll(pollfds, -1);
+            pollResult = Syscall.poll(pollfds, timeout);
             
-
-            if (result > 0 && !pollfds[0].revents.HasFlag(PollEvents.POLLHUP)) 
+            if (pollResult > 0 && !pollfds[0].revents.HasFlag(PollEvents.POLLHUP)) 
             {
                 var buffer = new byte[4096];
                 var cmsg = new byte[1024];
@@ -166,35 +173,35 @@ namespace Wayland
 
         public void Write(int value)
         {
-            Span<byte> bytes = new byte[4];
+            Span<byte> bytes = stackalloc byte[4];
             if(BitConverter.IsLittleEndian)
                 BinaryPrimitives.WriteInt32LittleEndian(bytes, value);
             else
                 BinaryPrimitives.WriteInt32BigEndian(bytes, value);
 
-            writeBuffer.AddRange(bytes.ToArray());
+            writeBuffer.Write(bytes);
         }
 
         public void Write(uint value)
         {
-            Span<byte> bytes = new byte[4];
+            Span<byte> bytes = stackalloc byte[4];
             if(BitConverter.IsLittleEndian)
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
             else
                 BinaryPrimitives.WriteUInt32BigEndian(bytes, value);
 
-            writeBuffer.AddRange(bytes.ToArray());
+            writeBuffer.Write(bytes);
         }
 
         public unsafe void Write(double value)
         {
-            Span<byte> bytes = new byte[8];
+            Span<byte> bytes = stackalloc byte[8];
             if(BitConverter.IsLittleEndian)
                 BinaryPrimitives.WriteUInt64LittleEndian(bytes, BitConverter.DoubleToUInt64Bits(value));
             else
                 BinaryPrimitives.WriteUInt64BigEndian(bytes, BitConverter.DoubleToUInt64Bits(value));
 
-            writeBuffer.AddRange(bytes.ToArray());
+            writeBuffer.Write(bytes);
         }
 
         public void Write(string s)
@@ -222,14 +229,11 @@ namespace Wayland
             {
                 int paddedLength = (a.Length + 3) / 4 * 4;
                 Write((uint)a.Length);
-
-                for (int i = 0; i < a.Length; i++)
-                {
-                    writeBuffer.Add(a[i]);
-                }
+                
+                writeBuffer.Write(a);
                 for (int i = 0; i < paddedLength - a.Length; i++)
                 {
-                    writeBuffer.Add(0);
+                    writeBuffer.WriteByte(0);
                 }
             }
         }
@@ -239,19 +243,19 @@ namespace Wayland
             int dupFd = Syscall.dup(h.ToInt32());
 
             if (dupFd < 0)
-                throw new Exception(string.Format("dup failed: {0}", h.ToInt32()));
+                throw new Exception($"dup failed: {h.ToInt32()}");
 
             writeFdBuffer.Add(dupFd);
         }
 
-        public int Flush()
+        public int Flush(int timeout)
         {
-            if (writeBuffer.Count == 0)
+            if (writeBuffer.Length == 0)
                 goto Read;
             InternalWrite();
 
         Read:
-            return Read();
+            return Read(timeout);
         }
 
 

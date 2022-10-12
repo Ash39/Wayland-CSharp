@@ -15,7 +15,7 @@ namespace Wayland
     public partial class WlSeat : WaylandObject
     {
         public const string INTERFACE = "wl_seat";
-        public WlSeat(uint factoryId, ref uint id, WaylandConnection connection, uint version = 8) : base(factoryId, ref id, version, connection)
+        public WlSeat(uint id, WaylandConnection connection, uint version = 8) : base(id, version, connection)
         {
         }
 
@@ -36,12 +36,11 @@ namespace Wayland
         ///<returns> seat pointer </returns>
         public WlPointer GetPointer()
         {
-            uint id = connection.Create();
-            WlPointer wObject = new WlPointer(this.id, ref id, connection);
+            WlPointer wObject = connection.Create<WlPointer>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetPointer, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetPointer}({id})");
-            connection[id] = wObject;
-            return (WlPointer)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetPointer", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -61,12 +60,11 @@ namespace Wayland
         ///<returns> seat keyboard </returns>
         public WlKeyboard GetKeyboard()
         {
-            uint id = connection.Create();
-            WlKeyboard wObject = new WlKeyboard(this.id, ref id, connection);
+            WlKeyboard wObject = connection.Create<WlKeyboard>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetKeyboard, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetKeyboard}({id})");
-            connection[id] = wObject;
-            return (WlKeyboard)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetKeyboard", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -86,12 +84,11 @@ namespace Wayland
         ///<returns> seat touch interface </returns>
         public WlTouch GetTouch()
         {
-            uint id = connection.Create();
-            WlTouch wObject = new WlTouch(this.id, ref id, connection);
+            WlTouch wObject = connection.Create<WlTouch>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetTouch, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetTouch}({id})");
-            connection[id] = wObject;
-            return (WlTouch)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetTouch", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -104,7 +101,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -181,17 +178,17 @@ namespace Wayland
             Name
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Capabilities:
                 {
-                    var capabilities = (CapabilityFlag)arguments[0];
+                    var capabilities = (CapabilityFlag)arguments[0].u;
                     if (this.capabilities != null)
                     {
                         this.capabilities.Invoke(this, capabilities);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Capabilities}({this},{capabilities})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Capabilities");
                     }
 
                     break;
@@ -199,18 +196,18 @@ namespace Wayland
 
                 case EventOpcode.Name:
                 {
-                    var name = (string)arguments[0];
+                    var name = arguments[0].s;
                     if (this.name != null)
                     {
                         this.name.Invoke(this, name);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Name}({this},{name})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Name", this, name);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -223,7 +220,7 @@ namespace Wayland
                 case EventOpcode.Name:
                     return new WaylandType[]{WaylandType.String, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

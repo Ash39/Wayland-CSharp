@@ -17,7 +17,7 @@ namespace Wayland
     public partial class WlDataDevice : WaylandObject
     {
         public const string INTERFACE = "wl_data_device";
-        public WlDataDevice(uint factoryId, ref uint id, WaylandConnection connection, uint version = 3) : base(factoryId, ref id, version, connection)
+        public WlDataDevice(uint id, WaylandConnection connection, uint version = 3) : base(id, version, connection)
         {
         }
 
@@ -65,7 +65,7 @@ namespace Wayland
         public void StartDrag(WlDataSource source, WlSurface origin, WlSurface icon, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.StartDrag, source.id, origin.id, icon.id, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.StartDrag}({source.id},{origin.id},{icon.id},{serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "StartDrag", source.id, origin.id, icon.id, serial);
         }
 
         ///<Summary>
@@ -83,7 +83,7 @@ namespace Wayland
         public void SetSelection(WlDataSource source, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetSelection, source.id, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetSelection}({source.id},{serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetSelection", source.id, serial);
         }
 
         ///<Summary>
@@ -95,7 +95,7 @@ namespace Wayland
         public void Release()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Release);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Release}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Release");
         }
 
         public enum RequestOpcode : ushort
@@ -196,19 +196,18 @@ namespace Wayland
             Selection
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.DataOffer:
                 {
-                    uint new_id = (uint)arguments[0];
-                    WlDataOffer id = new WlDataOffer(this.id, ref new_id, connection);
-                    connection.ServerObjectAdd(id);
+                    uint new_id = arguments[0].u;
+                    WlDataOffer id = connection.Create<WlDataOffer>(new_id, this.version);
                     if (this.dataOffer != null)
                     {
                         this.dataOffer.Invoke(this, id);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.DataOffer}({this},{id})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "DataOffer");
                     }
 
                     break;
@@ -216,15 +215,15 @@ namespace Wayland
 
                 case EventOpcode.Enter:
                 {
-                    var serial = (uint)arguments[0];
-                    var surface = connection[(uint)arguments[1]];
-                    var x = (double)arguments[2];
-                    var y = (double)arguments[3];
-                    var id = connection[(uint)arguments[4]];
+                    var serial = arguments[0].u;
+                    var surface = connection[arguments[1].u];
+                    var x = arguments[2].d;
+                    var y = arguments[3].d;
+                    var id = connection[arguments[4].u];
                     if (this.enter != null)
                     {
                         this.enter.Invoke(this, serial, surface, x, y, id);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Enter}({this},{serial},{surface},{x},{y},{id})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Enter", this, serial, surface, x, y, id);
                     }
 
                     break;
@@ -235,7 +234,7 @@ namespace Wayland
                     if (this.leave != null)
                     {
                         this.leave.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Leave}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Leave", this);
                     }
 
                     break;
@@ -243,13 +242,13 @@ namespace Wayland
 
                 case EventOpcode.Motion:
                 {
-                    var time = (uint)arguments[0];
-                    var x = (double)arguments[1];
-                    var y = (double)arguments[2];
+                    var time = arguments[0].u;
+                    var x = arguments[1].d;
+                    var y = arguments[2].d;
                     if (this.motion != null)
                     {
                         this.motion.Invoke(this, time, x, y);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Motion}({this},{time},{x},{y})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Motion", this, time, x, y);
                     }
 
                     break;
@@ -260,7 +259,7 @@ namespace Wayland
                     if (this.drop != null)
                     {
                         this.drop.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Drop}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Drop", this);
                     }
 
                     break;
@@ -268,18 +267,18 @@ namespace Wayland
 
                 case EventOpcode.Selection:
                 {
-                    var id = connection[(uint)arguments[0]];
+                    var id = connection[arguments[0].u];
                     if (this.selection != null)
                     {
                         this.selection.Invoke(this, id);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Selection}({this},{id})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Selection", this, id);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -300,7 +299,7 @@ namespace Wayland
                 case EventOpcode.Selection:
                     return new WaylandType[]{WaylandType.Object, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

@@ -40,7 +40,7 @@ namespace Wayland
     public partial class ZwpLinuxDmabufFeedbackV1 : WaylandObject
     {
         public const string INTERFACE = "zwp_linux_dmabuf_feedback_v1";
-        public ZwpLinuxDmabufFeedbackV1(uint factoryId, ref uint id, WaylandConnection connection, uint version = 4) : base(factoryId, ref id, version, connection)
+        public ZwpLinuxDmabufFeedbackV1(uint id, WaylandConnection connection, uint version = 4) : base(id, version, connection)
         {
         }
 
@@ -54,7 +54,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         public enum RequestOpcode : ushort
@@ -240,7 +240,7 @@ namespace Wayland
             TrancheFlags
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
@@ -249,7 +249,7 @@ namespace Wayland
                     if (this.done != null)
                     {
                         this.done.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Done}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Done");
                     }
 
                     break;
@@ -257,12 +257,12 @@ namespace Wayland
 
                 case EventOpcode.FormatTable:
                 {
-                    var fd = (IntPtr)arguments[0];
-                    var size = (uint)arguments[1];
+                    var fd = arguments[0].p;
+                    var size = arguments[1].u;
                     if (this.formatTable != null)
                     {
                         this.formatTable.Invoke(this, fd, size);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.FormatTable}({this},{fd},{size})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "FormatTable", this, fd, size);
                     }
 
                     break;
@@ -270,11 +270,11 @@ namespace Wayland
 
                 case EventOpcode.MainDevice:
                 {
-                    var device = (byte[])arguments[0];
+                    var device = arguments[0].b;
                     if (this.mainDevice != null)
                     {
                         this.mainDevice.Invoke(this, device);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.MainDevice}({this},{device})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "MainDevice", this, device);
                     }
 
                     break;
@@ -285,7 +285,7 @@ namespace Wayland
                     if (this.trancheDone != null)
                     {
                         this.trancheDone.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.TrancheDone}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "TrancheDone", this);
                     }
 
                     break;
@@ -293,11 +293,11 @@ namespace Wayland
 
                 case EventOpcode.TrancheTargetDevice:
                 {
-                    var device = (byte[])arguments[0];
+                    var device = arguments[0].b;
                     if (this.trancheTargetDevice != null)
                     {
                         this.trancheTargetDevice.Invoke(this, device);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.TrancheTargetDevice}({this},{device})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "TrancheTargetDevice", this, device);
                     }
 
                     break;
@@ -305,11 +305,11 @@ namespace Wayland
 
                 case EventOpcode.TrancheFormats:
                 {
-                    var indices = (byte[])arguments[0];
+                    var indices = arguments[0].b;
                     if (this.trancheFormats != null)
                     {
                         this.trancheFormats.Invoke(this, indices);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.TrancheFormats}({this},{indices})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "TrancheFormats", this, indices);
                     }
 
                     break;
@@ -317,11 +317,11 @@ namespace Wayland
 
                 case EventOpcode.TrancheFlags:
                 {
-                    var flags = (TrancheFlagsFlag)arguments[0];
+                    var flags = (TrancheFlagsFlag)arguments[0].u;
                     if (this.trancheFlags != null)
                     {
                         this.trancheFlags.Invoke(this, flags);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.TrancheFlags}({this},{flags})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "TrancheFlags", this, flags);
                     }
 
                     break;

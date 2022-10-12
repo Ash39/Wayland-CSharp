@@ -13,7 +13,7 @@ namespace Wayland
     public partial class WlDisplay : WaylandObject
     {
         public const string INTERFACE = "wl_display";
-        public WlDisplay(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlDisplay(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -38,12 +38,11 @@ namespace Wayland
         ///<returns> callback object for the sync request </returns>
         public WlCallback Sync()
         {
-            uint callback = connection.Create();
-            WlCallback wObject = new WlCallback(this.id, ref callback, connection);
+            WlCallback wObject = connection.Create<WlCallback>(0, this.version);
+            uint callback = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.Sync, callback);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Sync}({callback})");
-            connection[callback] = wObject;
-            return (WlCallback)connection[callback];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Sync", callback);
+            return wObject;
         }
 
         ///<Summary>
@@ -64,12 +63,11 @@ namespace Wayland
         ///<returns> global registry object </returns>
         public WlRegistry GetRegistry()
         {
-            uint registry = connection.Create();
-            WlRegistry wObject = new WlRegistry(this.id, ref registry, connection);
+            WlRegistry wObject = connection.Create<WlRegistry>(0, this.version);
+            uint registry = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetRegistry, registry);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetRegistry}({registry})");
-            connection[registry] = wObject;
-            return (WlRegistry)connection[registry];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetRegistry", registry);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -108,19 +106,19 @@ namespace Wayland
             DeleteId
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Error:
                 {
-                    var objectId = connection[(uint)arguments[0]];
-                    var code = (uint)arguments[1];
-                    var message = (string)arguments[2];
+                    var objectId = connection[arguments[0].u];
+                    var code = arguments[1].u;
+                    var message = arguments[2].s;
                     if (this.error != null)
                     {
                         this.error.Invoke(this, objectId, code, message);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Error}({this},{objectId},{code},{message})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Error");
                     }
 
                     break;
@@ -128,18 +126,18 @@ namespace Wayland
 
                 case EventOpcode.DeleteId:
                 {
-                    var id = (uint)arguments[0];
+                    var id = arguments[0].u;
                     if (this.deleteId != null)
                     {
                         this.deleteId.Invoke(this, id);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.DeleteId}({this},{id})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "DeleteId", this, id);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -152,7 +150,7 @@ namespace Wayland
                 case EventOpcode.DeleteId:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

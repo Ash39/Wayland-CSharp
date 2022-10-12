@@ -1,7 +1,10 @@
 {
   "profiles": {
     "Wayland.Sample": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "environmentVariables": {
+        "WAYLAND_DEBUG": "1"
+      }
     },
     "WSL": {
       "commandName": "WSL2",

@@ -33,7 +33,7 @@ namespace Wayland
     public partial class XdgPositioner : WaylandObject
     {
         public const string INTERFACE = "xdg_positioner";
-        public XdgPositioner(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public XdgPositioner(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -46,7 +46,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -65,7 +65,7 @@ namespace Wayland
         public void SetSize(int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetSize, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetSize}({width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetSize", width, height);
         }
 
         ///<Summary>
@@ -92,7 +92,7 @@ namespace Wayland
         public void SetAnchorRect(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetAnchorRect, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetAnchorRect}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetAnchorRect", x, y, width, height);
         }
 
         ///<Summary>
@@ -110,7 +110,7 @@ namespace Wayland
         public void SetAnchor(AnchorFlag anchor)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetAnchor, (uint)anchor);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetAnchor}({(uint)anchor})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetAnchor", (uint)anchor);
         }
 
         ///<Summary>
@@ -128,7 +128,7 @@ namespace Wayland
         public void SetGravity(GravityFlag gravity)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetGravity, (uint)gravity);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetGravity}({(uint)gravity})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetGravity", (uint)gravity);
         }
 
         ///<Summary>
@@ -156,7 +156,7 @@ namespace Wayland
         public void SetConstraintAdjustment(uint constraint_adjustment)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetConstraintAdjustment, constraint_adjustment);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetConstraintAdjustment}({constraint_adjustment})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetConstraintAdjustment", constraint_adjustment);
         }
 
         ///<Summary>
@@ -181,7 +181,7 @@ namespace Wayland
         public void SetOffset(int x, int y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetOffset, x, y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetOffset}({x},{y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetOffset", x, y);
         }
 
         ///<Summary>
@@ -199,7 +199,7 @@ namespace Wayland
         public void SetReactive()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetReactive);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetReactive}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetReactive");
         }
 
         ///<param name = "parent_width"> future window geometry width of parent </param>
@@ -207,7 +207,7 @@ namespace Wayland
         public void SetParentSize(int parent_width, int parent_height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetParentSize, parent_width, parent_height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetParentSize}({parent_width},{parent_height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetParentSize", parent_width, parent_height);
         }
 
         ///<Summary>
@@ -223,7 +223,7 @@ namespace Wayland
         public void SetParentConfigure(uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetParentConfigure, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetParentConfigure}({serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetParentConfigure", serial);
         }
 
         public enum RequestOpcode : ushort
@@ -244,12 +244,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -258,7 +258,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

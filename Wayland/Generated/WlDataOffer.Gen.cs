@@ -17,7 +17,7 @@ namespace Wayland
     public partial class WlDataOffer : WaylandObject
     {
         public const string INTERFACE = "wl_data_offer";
-        public WlDataOffer(uint factoryId, ref uint id, WaylandConnection connection, uint version = 3) : base(factoryId, ref id, version, connection)
+        public WlDataOffer(uint id, WaylandConnection connection, uint version = 3) : base(id, version, connection)
         {
         }
 
@@ -47,7 +47,7 @@ namespace Wayland
         public void Accept(uint serial, string mime_type)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Accept, serial, mime_type);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Accept}({serial},{mime_type})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Accept", serial, mime_type);
         }
 
         ///<Summary>
@@ -77,7 +77,7 @@ namespace Wayland
         public void Receive(string mime_type, IntPtr fd)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Receive, mime_type, fd);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Receive}({mime_type},{fd})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Receive", mime_type, fd);
         }
 
         ///<Summary>
@@ -89,7 +89,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -117,7 +117,7 @@ namespace Wayland
         public void Finish()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Finish);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Finish}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Finish");
         }
 
         ///<Summary>
@@ -167,7 +167,7 @@ namespace Wayland
         public void SetActions(WlDataDeviceManager.DndActionFlag dnd_actions, WlDataDeviceManager.DndActionFlag preferred_action)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetActions, (uint)dnd_actions, (uint)preferred_action);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetActions}({(uint)dnd_actions},{(uint)preferred_action})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetActions", (uint)dnd_actions, (uint)preferred_action);
         }
 
         public enum RequestOpcode : ushort
@@ -250,17 +250,17 @@ namespace Wayland
             Action
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Offer:
                 {
-                    var mimeType = (string)arguments[0];
+                    var mimeType = arguments[0].s;
                     if (this.offer != null)
                     {
                         this.offer.Invoke(this, mimeType);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Offer}({this},{mimeType})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Offer");
                     }
 
                     break;
@@ -268,11 +268,11 @@ namespace Wayland
 
                 case EventOpcode.SourceActions:
                 {
-                    var sourceActions = (WlDataDeviceManager.DndActionFlag)arguments[0];
+                    var sourceActions = (WlDataDeviceManager.DndActionFlag)arguments[0].u;
                     if (this.sourceActions != null)
                     {
                         this.sourceActions.Invoke(this, sourceActions);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.SourceActions}({this},{sourceActions})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "SourceActions", this, sourceActions);
                     }
 
                     break;
@@ -280,18 +280,18 @@ namespace Wayland
 
                 case EventOpcode.Action:
                 {
-                    var dndAction = (WlDataDeviceManager.DndActionFlag)arguments[0];
+                    var dndAction = (WlDataDeviceManager.DndActionFlag)arguments[0].u;
                     if (this.action != null)
                     {
                         this.action.Invoke(this, dndAction);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Action}({this},{dndAction})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Action", this, dndAction);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -306,7 +306,7 @@ namespace Wayland
                 case EventOpcode.Action:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

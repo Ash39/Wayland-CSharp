@@ -65,7 +65,7 @@ namespace Wayland
     public partial class XdgSurface : WaylandObject
     {
         public const string INTERFACE = "xdg_surface";
-        public XdgSurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public XdgSurface(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -79,7 +79,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -96,12 +96,11 @@ namespace Wayland
         ///<returns>  </returns>
         public XdgToplevel GetToplevel()
         {
-            uint id = connection.Create();
-            XdgToplevel wObject = new XdgToplevel(this.id, ref id, connection);
+            XdgToplevel wObject = connection.Create<XdgToplevel>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetToplevel, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetToplevel}({id})");
-            connection[id] = wObject;
-            return (XdgToplevel)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetToplevel", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -124,12 +123,11 @@ namespace Wayland
         ///<param name = "positioner">  </param>
         public XdgPopup GetPopup(XdgSurface parent, XdgPositioner positioner)
         {
-            uint id = connection.Create();
-            XdgPopup wObject = new XdgPopup(this.id, ref id, connection);
+            XdgPopup wObject = connection.Create<XdgPopup>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.GetPopup, id, parent.id, positioner.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.GetPopup}({id},{parent.id},{positioner.id})");
-            connection[id] = wObject;
-            return (XdgPopup)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "GetPopup", id, parent.id, positioner.id);
+            return wObject;
         }
 
         ///<Summary>
@@ -179,7 +177,7 @@ namespace Wayland
         public void SetWindowGeometry(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetWindowGeometry, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetWindowGeometry}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetWindowGeometry", x, y, width, height);
         }
 
         ///<Summary>
@@ -214,7 +212,7 @@ namespace Wayland
         public void AckConfigure(uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.AckConfigure, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.AckConfigure}({serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "AckConfigure", serial);
         }
 
         public enum RequestOpcode : ushort
@@ -256,24 +254,24 @@ namespace Wayland
             Configure
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Configure:
                 {
-                    var serial = (uint)arguments[0];
+                    var serial = arguments[0].u;
                     if (this.configure != null)
                     {
                         this.configure.Invoke(this, serial);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Configure}({this},{serial})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Configure");
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -284,7 +282,7 @@ namespace Wayland
                 case EventOpcode.Configure:
                     return new WaylandType[]{WaylandType.Uint, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

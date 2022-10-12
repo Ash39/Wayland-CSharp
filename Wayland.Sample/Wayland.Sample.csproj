@@ -18,7 +18,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Wayland.Compatibility\Wayland.Compatibility.csproj" />
     <ProjectReference Include="..\Wayland.Linux.Dmabuf\Wayland.Linux.Dmabuf.csproj" />
     <ProjectReference Include="..\Wayland.DRM\Wayland.DRM.csproj" />
     <ProjectReference Include="..\Wayland.XdgShell\Wayland.XdgShell.csproj" />

@@ -14,7 +14,7 @@ namespace Wayland
     public partial class WlCompositor : WaylandObject
     {
         public const string INTERFACE = "wl_compositor";
-        public WlCompositor(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public WlCompositor(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -27,12 +27,11 @@ namespace Wayland
         ///<returns> the new surface </returns>
         public WlSurface CreateSurface()
         {
-            uint id = connection.Create();
-            WlSurface wObject = new WlSurface(this.id, ref id, connection);
+            WlSurface wObject = connection.Create<WlSurface>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateSurface, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateSurface}({id})");
-            connection[id] = wObject;
-            return (WlSurface)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateSurface", id);
+            return wObject;
         }
 
         ///<Summary>
@@ -44,12 +43,11 @@ namespace Wayland
         ///<returns> the new region </returns>
         public WlRegion CreateRegion()
         {
-            uint id = connection.Create();
-            WlRegion wObject = new WlRegion(this.id, ref id, connection);
+            WlRegion wObject = connection.Create<WlRegion>(0, this.version);
+            uint id = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.CreateRegion, id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.CreateRegion}({id})");
-            connection[id] = wObject;
-            return (WlRegion)connection[id];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "CreateRegion", id);
+            return wObject;
         }
 
         public enum RequestOpcode : ushort
@@ -62,12 +60,12 @@ namespace Wayland
         {
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -76,7 +74,7 @@ namespace Wayland
             switch ((EventOpcode)opCode)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
     }

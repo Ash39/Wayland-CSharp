@@ -57,7 +57,7 @@ namespace Wayland
     public partial class WlSurface : WaylandObject
     {
         public const string INTERFACE = "wl_surface";
-        public WlSurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 5) : base(factoryId, ref id, version, connection)
+        public WlSurface(uint id, WaylandConnection connection, uint version = 5) : base(id, version, connection)
         {
         }
 
@@ -70,7 +70,7 @@ namespace Wayland
         public void Destroy()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Destroy);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Destroy}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Destroy");
         }
 
         ///<Summary>
@@ -149,7 +149,7 @@ namespace Wayland
         public void Attach(WlBuffer buffer, int x, int y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Attach, buffer.id, x, y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Attach}({buffer.id},{x},{y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Attach", buffer.id, x, y);
         }
 
         ///<Summary>
@@ -190,7 +190,7 @@ namespace Wayland
         public void Damage(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Damage, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Damage}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Damage", x, y, width, height);
         }
 
         ///<Summary>
@@ -239,12 +239,11 @@ namespace Wayland
         ///<returns> callback object for the frame request </returns>
         public WlCallback Frame()
         {
-            uint callback = connection.Create();
-            WlCallback wObject = new WlCallback(this.id, ref callback, connection);
+            WlCallback wObject = connection.Create<WlCallback>(0, this.version);
+            uint callback = wObject.id;
             connection.Marshal(this.id, (ushort)RequestOpcode.Frame, callback);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Frame}({callback})");
-            connection[callback] = wObject;
-            return (WlCallback)connection[callback];
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Frame", callback);
+            return wObject;
         }
 
         ///<Summary>
@@ -286,7 +285,7 @@ namespace Wayland
         public void SetOpaqueRegion(WlRegion region)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetOpaqueRegion, region.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetOpaqueRegion}({region.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetOpaqueRegion", region.id);
         }
 
         ///<Summary>
@@ -325,7 +324,7 @@ namespace Wayland
         public void SetInputRegion(WlRegion region)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetInputRegion, region.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetInputRegion}({region.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetInputRegion", region.id);
         }
 
         ///<Summary>
@@ -356,7 +355,7 @@ namespace Wayland
         public void Commit()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Commit);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Commit}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Commit");
         }
 
         ///<Summary>
@@ -403,7 +402,7 @@ namespace Wayland
         public void SetBufferTransform(WlOutput.TransformFlag transform)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetBufferTransform, (int)transform);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetBufferTransform}({(int)transform})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetBufferTransform", (int)transform);
         }
 
         ///<Summary>
@@ -444,7 +443,7 @@ namespace Wayland
         public void SetBufferScale(int scale)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetBufferScale, scale);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetBufferScale}({scale})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetBufferScale", scale);
         }
 
         ///<Summary>
@@ -497,7 +496,7 @@ namespace Wayland
         public void DamageBuffer(int x, int y, int width, int height)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.DamageBuffer, x, y, width, height);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.DamageBuffer}({x},{y},{width},{height})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "DamageBuffer", x, y, width, height);
         }
 
         ///<Summary>
@@ -524,7 +523,7 @@ namespace Wayland
         public void Offset(int x, int y)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Offset, x, y);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Offset}({x},{y})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Offset", x, y);
         }
 
         public enum RequestOpcode : ushort
@@ -576,17 +575,17 @@ namespace Wayland
             Leave
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Enter:
                 {
-                    var output = connection[(uint)arguments[0]];
+                    var output = connection[arguments[0].u];
                     if (this.enter != null)
                     {
                         this.enter.Invoke(this, output);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Enter}({this},{output})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Enter");
                     }
 
                     break;
@@ -594,18 +593,18 @@ namespace Wayland
 
                 case EventOpcode.Leave:
                 {
-                    var output = connection[(uint)arguments[0]];
+                    var output = connection[arguments[0].u];
                     if (this.leave != null)
                     {
                         this.leave.Invoke(this, output);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Leave}({this},{output})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Leave", this, output);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -618,7 +617,7 @@ namespace Wayland
                 case EventOpcode.Leave:
                     return new WaylandType[]{WaylandType.Object, };
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 

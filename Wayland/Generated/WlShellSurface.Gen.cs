@@ -24,7 +24,7 @@ namespace Wayland
     public partial class WlShellSurface : WaylandObject
     {
         public const string INTERFACE = "wl_shell_surface";
-        public WlShellSurface(uint factoryId, ref uint id, WaylandConnection connection, uint version = 1) : base(factoryId, ref id, version, connection)
+        public WlShellSurface(uint id, WaylandConnection connection, uint version = 1) : base(id, version, connection)
         {
         }
 
@@ -39,7 +39,7 @@ namespace Wayland
         public void Pong(uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Pong, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Pong}({serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Pong", serial);
         }
 
         ///<Summary>
@@ -58,7 +58,7 @@ namespace Wayland
         public void Move(WlSeat seat, uint serial)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Move, seat.id, serial);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Move}({seat.id},{serial})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Move", seat.id, serial);
         }
 
         ///<Summary>
@@ -78,7 +78,7 @@ namespace Wayland
         public void Resize(WlSeat seat, uint serial, ResizeFlag edges)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.Resize, seat.id, serial, (uint)edges);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.Resize}({seat.id},{serial},{(uint)edges})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "Resize", seat.id, serial, (uint)edges);
         }
 
         ///<Summary>
@@ -93,7 +93,7 @@ namespace Wayland
         public void SetToplevel()
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetToplevel);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetToplevel}()");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetToplevel");
         }
 
         ///<Summary>
@@ -117,7 +117,7 @@ namespace Wayland
         public void SetTransient(WlSurface parent, int x, int y, TransientFlag flags)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetTransient, parent.id, x, y, (uint)flags);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetTransient}({parent.id},{x},{y},{(uint)flags})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetTransient", parent.id, x, y, (uint)flags);
         }
 
         ///<Summary>
@@ -170,7 +170,7 @@ namespace Wayland
         public void SetFullscreen(FullscreenMethodFlag method, uint framerate, WlOutput output)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetFullscreen, (uint)method, framerate, output.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetFullscreen}({(uint)method},{framerate},{output.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetFullscreen", (uint)method, framerate, output.id);
         }
 
         ///<Summary>
@@ -210,7 +210,7 @@ namespace Wayland
         public void SetPopup(WlSeat seat, uint serial, WlSurface parent, int x, int y, TransientFlag flags)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetPopup, seat.id, serial, parent.id, x, y, (uint)flags);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetPopup}({seat.id},{serial},{parent.id},{x},{y},{(uint)flags})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetPopup", seat.id, serial, parent.id, x, y, (uint)flags);
         }
 
         ///<Summary>
@@ -244,7 +244,7 @@ namespace Wayland
         public void SetMaximized(WlOutput output)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetMaximized, output.id);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetMaximized}({output.id})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetMaximized", output.id);
         }
 
         ///<Summary>
@@ -265,7 +265,7 @@ namespace Wayland
         public void SetTitle(string title)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetTitle, title);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetTitle}({title})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetTitle", title);
         }
 
         ///<Summary>
@@ -284,7 +284,7 @@ namespace Wayland
         public void SetClass(string class_)
         {
             connection.Marshal(this.id, (ushort)RequestOpcode.SetClass, class_);
-            DebugLog.WriteLine($"-->{INTERFACE}@{this.id}.{RequestOpcode.SetClass}({class_})");
+            DebugLog.WriteLine(DebugType.Request, INTERFACE, this.id, "SetClass", class_);
         }
 
         public enum RequestOpcode : ushort
@@ -352,17 +352,17 @@ namespace Wayland
             PopupDone
         }
 
-        public override void Event(ushort opCode, object[] arguments)
+        public override void Event(ushort opCode, WlType[] arguments)
         {
             switch ((EventOpcode)opCode)
             {
                 case EventOpcode.Ping:
                 {
-                    var serial = (uint)arguments[0];
+                    var serial = arguments[0].u;
                     if (this.ping != null)
                     {
                         this.ping.Invoke(this, serial);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Ping}({this},{serial})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Ping");
                     }
 
                     break;
@@ -370,13 +370,13 @@ namespace Wayland
 
                 case EventOpcode.Configure:
                 {
-                    var edges = (ResizeFlag)arguments[0];
-                    var width = (int)arguments[1];
-                    var height = (int)arguments[2];
+                    var edges = (ResizeFlag)arguments[0].u;
+                    var width = arguments[1].i;
+                    var height = arguments[2].i;
                     if (this.configure != null)
                     {
                         this.configure.Invoke(this, edges, width, height);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.Configure}({this},{edges},{width},{height})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "Configure", this, edges, width, height);
                     }
 
                     break;
@@ -387,14 +387,14 @@ namespace Wayland
                     if (this.popupDone != null)
                     {
                         this.popupDone.Invoke(this);
-                        DebugLog.WriteLine($"{INTERFACE}@{this.id}.{EventOpcode.PopupDone}({this})");
+                        DebugLog.WriteLine(DebugType.Event, INTERFACE, this.id, "PopupDone", this);
                     }
 
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
@@ -409,7 +409,7 @@ namespace Wayland
                 case EventOpcode.PopupDone:
                     return new WaylandType[]{};
                 default:
-                    throw new ArgumentOutOfRangeException("unknown event");
+                    throw new ArgumentOutOfRangeException(nameof(opCode), "unknown event");
             }
         }
 
